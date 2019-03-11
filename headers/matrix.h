@@ -42,9 +42,9 @@ namespace momo
 		matrix<T>& operator=(const std::vector<std::vector<T> >&);
 		bool operator==(const matrix<T>&) const;
 		bool operator!=(const matrix<T>&) const;
-		matrix<T>& operator+=(const matrix<T>);
-		matrix<T>& operator-=(const matrix<T>);
-		matrix<T>& operator*=(const matrix<T>);
+		matrix<T>& operator+=(const matrix<T>&);
+		matrix<T>& operator-=(const matrix<T>&);
+		matrix<T>& operator*=(const matrix<T>&);
 		matrix<T>& operator+=(T);
 		matrix<T>& operator-=(T);
 		matrix<T>& operator*=(T);
@@ -232,7 +232,7 @@ namespace momo
 	}
 
 	template<typename T>
-	matrix<T>& matrix<T>::operator+=(const matrix<T> M)
+	matrix<T>& matrix<T>::operator+=(const matrix<T>& M)
 	{
 		if (size_x != M.size_x || size_y != M.size_y) throw new calculationException;
 		for (size_t i = 0; i < size_x; i++)
@@ -246,7 +246,7 @@ namespace momo
 	}
 
 	template<typename T>
-	matrix<T>& matrix<T>::operator-=(const matrix<T> M)
+	matrix<T>& matrix<T>::operator-=(const matrix<T>& M)
 	{
 		if (size_x != M.size_x || size_y != M.size_y) throw new calculationException;
 		for (size_t i = 0; i < size_x; i++)
@@ -416,7 +416,7 @@ namespace momo
 	}
 
 	template<typename T>
-	matrix<T>& matrix<T>::operator*=(const matrix<T> M)
+	matrix<T>& matrix<T>::operator*=(const matrix<T>& M)
 	{
 		if (size_y != M.size_x) throw new calculationException();
 		matrix<T> res(size_x, M.size_y);
