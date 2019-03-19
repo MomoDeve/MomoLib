@@ -34,7 +34,8 @@ namespace momo
 		matrix(T**, size_t, size_t);
 		matrix(const std::vector<std::vector<T> >&);
 		matrix(std::initializer_list<std::initializer_list<T> >);
-		~matrix();
+		matrix(std::initializer_list<T>);
+		~matrix() = default;
 		size_t xsize() const;
 		size_t ysize() const;
 		std::vector<std::vector<T> > getVectorCopy() const;
@@ -59,16 +60,17 @@ namespace momo
 	};
 
 	template<typename T>
-	void display(const matrix<T>& src)
+	std::ostream& operator<< (std::ostream& out, matrix<T>& src)
 	{
 		for (size_t i = 0; i < src.xsize(); i++)
 		{
 			for (size_t j = 0; j < src.ysize(); j++)
 			{
-				std::cout << src.vec[i][j] << " ";
+				out << src.vec[i][j] << " ";
 			}
-			std::cout << "\n";
+			out << "\n";
 		}
+		return out;
 	}
 
 	template<typename T>
@@ -181,7 +183,15 @@ namespace momo
 	}
 
 	template<typename T>
-	matrix<T>::~matrix() {}
+	matrix<T>::matrix(std::initializer_list<T> src)
+	{
+		vec.resize(src.size());
+		size_x = size_y = vec.size();
+		for (auto it = vec.begin(); it != vec.end(); it++)
+		{
+			*it = src;
+		}
+	}
 
 	template<typename T>
 	size_t matrix<T>::xsize() const
