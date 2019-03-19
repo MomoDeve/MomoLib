@@ -8,16 +8,13 @@
 
 namespace momo
 {
-	namespace duration
+	typedef enum
 	{
-		enum
-		{
-			nanoseconds,
-			microseconds,
-			seconds,
-			minutes
-		};
-	}
+		nano,
+		micro,
+		sec,
+		min
+	} duration;
 
 	__time64_t get_ctime();
 
@@ -27,24 +24,26 @@ namespace momo
 
 	std::string getDay();
 
-	template<typename T>
-	long long functionTest(T(*f)(), int time = duration::nanoseconds)
+	template<typename function>
+	int functionTest(function* f, duration time = duration::nano)
 	{
+		using namespace std::chrono;
+
 		auto start = steady_clock::now();
 		f();
 		auto end = steady_clock::now();
 		switch (time)
 		{
-		case duration::minutes:
-			return (long long)std::chrono::duration_cast<std::chrono::minutes>(end - start).count();
-		case duration::seconds:
-			return (long long)std::chrono::duration_cast<std::chrono::seconds>(end - start).count();
-		case duration::microseconds:
-			return (long long)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-		case duration::nanoseconds:
-			return (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+		case duration::min:
+			return duration_cast<minutes>(end - start).count();
+		case duration::sec:
+			return duration_cast<seconds>(end - start).count();
+		case duration::micro:
+			return duration_cast<microseconds>(end - start).count();
+		case duration::nano:
+			return duration_cast<nanoseconds>(end - start).count();
 		default:
-			return (long long)std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+			return duration_cast<nanoseconds>(end - start).count();
 		}
 	}
 }
