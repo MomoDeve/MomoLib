@@ -24,21 +24,21 @@ namespace momo
 		marray(const std::string&);
 		marray<T>& operator+= (const T& element);
 		marray<T>& operator+= (const marray<T>& other);
-		marray<T>& operator+= (const std::vector<T>& other);
 		marray<T>& operator*= (const T& element);
+		marray<T>& operator*= (const marray<T>& other);
 		marray<T>& operator/= (const T& element);
+		marray<T>& operator/= (const marray<T>& other);
 		marray<T>& operator-= (const T& element);
+		marray<T>& operator-= (const marray<T>& other);
 		marray<T> operator+ (const T& element) const;
 		marray<T> operator- (const T& element) const;
 		marray<T> operator* (const T& element) const;
 		marray<T> operator/ (const T& element) const;
 		marray<T>& append(const marray<T>& other);
 		marray<T>& append(const T& element);
-		marray<T>& append(std::initializer_list<T> src);
-		marray<T>& append(const std::vector<T>& src);
 		T pop();
 		T push(const T& element);
-		bool find(const T& element) const;
+		int find(const T& element) const;
 		bool remove(const T& element);
 		bool removeAll(const T& element);
 		marray<T> slice(int begin, int end = -1, int step = 1) const;
@@ -157,19 +157,8 @@ namespace momo
 	template<typename T>
 	inline marray<T>& marray<T>::operator+=(const marray<T>& other)
 	{
-		size_t limit = std::min(std::vector<T>::size(), other.size());
-		for (size_t i = 0; i < limit; i++)
-		{
-			(*this)[i] += other[i];
-		}
-		return *this;
-	}
-
-	template<typename T>
-	inline marray<T>& marray<T>::operator+=(const std::vector<T>& other)
-	{
-		size_t limit = std::min(std::vector<T>::size(), other.size());
-		for (size_t i = 0; i < limit; i++)
+		size_t end = std::min(std::vector<T>::size(), other.size());
+		for (size_t i = 0; i < end; i++)
 		{
 			(*this)[i] += other[i];
 		}
@@ -187,6 +176,17 @@ namespace momo
 	}
 
 	template<typename T>
+	inline marray<T>& marray<T>::operator*=(const marray<T>& other)
+	{
+		size_t end = std::min(std::vector<T>::size(), other.size());
+		for (size_t i = 0; i < end; i++)
+		{
+			(*this)[i] *= other[i];
+		}
+		return *this;
+	}
+
+	template<typename T>
 	inline marray<T>& marray<T>::operator/=(const T & element)
 	{
 		for (auto it = std::vector<T>::begin(); it != std::vector<T>::end(); it++)
@@ -197,11 +197,33 @@ namespace momo
 	}
 
 	template<typename T>
+	inline marray<T>& marray<T>::operator/=(const marray<T>& other)
+	{
+		size_t end = std::min(std::vector<T>::size(), other.size());
+		for (size_t i = 0; i < end; i++)
+		{
+			(*this)[i] /= other[i];
+		}
+		return *this;
+	}
+
+	template<typename T>
 	inline marray<T>& marray<T>::operator-=(const T & element)
 	{
 		for (auto it = std::vector<T>::begin(); it != std::vector<T>::end(); it++)
 		{
 			*it = (*it) - element;
+		}
+		return *this;
+	}
+
+	template<typename T>
+	inline marray<T>& marray<T>::operator-=(const marray<T>& other)
+	{
+		size_t end = std::min(std::vector<T>::size(), other.size());
+		for (size_t i = 0; i < end; i++)
+		{
+			(*this)[i] -= other[i];
 		}
 		return *this;
 	}
@@ -265,20 +287,6 @@ namespace momo
 	}
 
 	template<typename T>
-	inline marray<T>& marray<T>::append(std::initializer_list<T> src)
-	{
-		std::vector<T>::insert(std::vector<T>::end(), src);
-		return *this;
-	}
-
-	template<typename T>
-	inline marray<T>& marray<T>::append(const std::vector<T>& src)
-	{
-		std::vector<T>::insert(std::vector<T>::end(), src);
-		return *this;
-	}
-
-	template<typename T>
 	inline T marray<T>::pop()
 	{
 		T element = std::vector<T>::back();
@@ -294,9 +302,13 @@ namespace momo
 	}
 
 	template<typename T>
-	inline bool marray<T>::find(const T & element) const
+	inline int marray<T>::find(const T& element) const
 	{
-		return (std::vector<T>::find(element) != std::vector<T>::end());
+		for (size_t i = 0; i < std::vector<T>::size(); i++)
+		{
+			if ((*this)[i] == element) return i;
+		}
+		return -1;
 	}
 
 	template<typename T>
@@ -316,11 +328,16 @@ namespace momo
 	template<typename T>
 	inline bool marray<T>::removeAll(const T & element)
 	{
-		bool removedAny = false;
-		while (remove(element))
+		marray<T> res;
+		for (auto it = std::vector<T>::begin(); it != std::vector<T>::end(); it++)
 		{
-			removedAny = true;
+			if (*it != element)
+			{
+				res.push(*it);
+			}
 		}
+		bool removedAny = res.size() == std::vector<T>::size();
+		*this = res;
 		return removedAny;
 	}
 
