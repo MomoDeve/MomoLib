@@ -357,10 +357,7 @@ namespace momo
 		}
 		else
 		{
-			if (step < 0 && begin < end)
-			{
-				std::swap(begin, end);
-			}
+			if (begin < end) std::swap(begin, end);
 			for (int i = begin; i >= end; i += step)
 			{
 				res.push((*this)[i]);
