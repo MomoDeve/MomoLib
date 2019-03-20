@@ -4,7 +4,6 @@
 #include <initializer_list>
 #include <iostream>
 #include <algorithm>
-#include <set>
 
 #ifndef size_t
 typedef unsigned int size_t;
@@ -40,16 +39,24 @@ namespace momo
 		T pop();
 		T push(const T& element);
 		bool find(const T& element) const;
+		bool remove(const T& element);
+		bool removeAll(const T& element);
 		marray<T> slice(int begin, int end = -1, int step = 1) const;
 		marray<T>& reverse();
 		marray<T>& sort();
-		marray<T>& make_unique();
+		marray<T>& makeUnique();
 		marray<T> reversed() const;
 		marray<T> sorted() const;
 		marray<T> unique() const;
 
 		template<typename U>
 		friend std::ostream& operator<<(std::ostream& out, const marray<U>& src);
+
+		template<typename Function>
+		marray<T>& apply(Function f);
+
+		template<typename Function>
+		marray<T> transfromed(Function f);
 	};
 
 	template<typename T>
@@ -108,9 +115,11 @@ namespace momo
 	}
 
 	template<typename T>
-	inline marray<T>& marray<T>::make_unique()
+	inline marray<T>& marray<T>::makeUnique()
 	{
-		vec(std::set<T>(std::vector<T>::begin(), std::vector<T>::end()));
+		sort();
+		auto it = std::unique(std::vector<T>::begin(), std::vector<T>::end());
+		std::vector<T>::erase(it, std::vector<T>::end());
 		return *this;
 	}
 
@@ -291,6 +300,31 @@ namespace momo
 	}
 
 	template<typename T>
+	inline bool marray<T>::remove(const T& element)
+	{
+		for (auto it = std::vector<T>::begin(); it != std::vector<T>::end(); it++)
+		{
+			if (*it == element)
+			{
+				std::vector<T>::erase(it);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template<typename T>
+	inline bool marray<T>::removeAll(const T & element)
+	{
+		bool removedAny = false;
+		while (remove(element))
+		{
+			removedAny = true;
+		}
+		return removedAny;
+	}
+
+	template<typename T>
 	inline marray<T> marray<T>::slice(int begin, int end, int step) const
 	{
 		marray<T> res;
@@ -326,5 +360,19 @@ namespace momo
 			out << i << " ";
 		}
 		return out;
+	}
+	template<typename T>
+	template<typename Function>
+	inline marray<T>& marray<T>::apply(Function f)
+	{
+		std::transform(std::vector<T>::begin(), std::vector<T>::end(), std::vector<T>::begin(), f);
+		return *this;
+	}
+	template<typename T>
+	template<typename Function>
+	inline marray<T> marray<T>::transfromed(Function f)
+	{
+		marray<T> res(*this);
+		return res.apply(f);
 	}
 }
