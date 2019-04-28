@@ -6,3 +6,4 @@ for now there is implementation of:
 - easy get time and function test in C++: time.h
 - splay tree in C++: splay_tree.h
 - dynamic array in C++: marray.h
+- complex numbers in C++: complex.h
