@@ -50,6 +50,10 @@ namespace momo
 		template<typename Func> delegate<Out, In...> operator-(Func f) const;
 	};
 
+	using event = delegate<void>;
+	template<typename... Args> using action = delegate<void, Args...>;
+	template<typename... Args> using predicate = delegate<bool, Args...>;
+
 	template<typename Out, typename... In>
 	delegate<Out, In...>::delegate() { }
 
