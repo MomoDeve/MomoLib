@@ -7,3 +7,4 @@ for now there is implementation of:
 - splay tree in C++: splay_tree.h
 - dynamic array in C++: marray.h
 - complex numbers in C++: complex.h
+- function wrapper in C++: function.h
