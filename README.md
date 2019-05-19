@@ -8,3 +8,4 @@ for now there is implementation of:
 - dynamic array in C++: marray.h
 - complex numbers in C++: complex.h
 - function wrapper in C++: function.h
+- delegate in C++: delegate.h
