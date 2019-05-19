@@ -10,20 +10,21 @@ namespace momo
 		typedef Out(*f_ptr)(In...);
 	public:
 		function();
-
+		function(const function<Out, In...>& f);
+		function(function<Out, In...>&& f);
 		template<typename Func> function(Func f);
 
 		template<typename Func> function<Out, In...>& operator=(Func f);
 		function<Out, In...>& operator=(const function<Out, In...>& f);
 		function<Out, In...>& operator=(function<Out, In...>&& f);
 
-		Out operator()(In...) const;
+		Out operator()(In... args) const;
 		bool operator==(const function<Out, In...>& f) const;
 		bool operator!=(const function<Out, In...>& f) const;
-		operator bool() const;
 
 		bool empty() const;
 		f_ptr get() const;
+		Out invoke(In... args) const;
 
 		f_ptr reset();
 		template<typename Func> function<Out, In...>& assign(Func f);
@@ -34,6 +35,14 @@ namespace momo
 	template<typename Out, typename ...In>
 	function<Out, In...>::function()
 		: _function(nullptr) { }
+
+	template<typename Out, typename ...In>
+	function<Out, In...>::function(const function<Out, In...>& f)
+		: _function(f._function) { }
+
+	template<typename Out, typename ...In>
+	function<Out, In...>::function(function<Out, In...>&& f)
+		: _function(std::move(f._function)) { }
 
 	template<typename Out, typename ...In>
 	template<typename Func>
@@ -76,12 +85,6 @@ namespace momo
 	}
 
 	template<typename Out, typename ...In>
-	inline function<Out, In...>::operator bool() const
-	{
-		return _function != nullptr;
-	}
-
-	template<typename Out, typename ...In>
 	inline bool function<Out, In...>::empty() const
 	{
 		return _function != nullptr;
@@ -91,6 +94,12 @@ namespace momo
 	inline typename function<Out, In...>::f_ptr function<Out, In...>::get() const
 	{
 		return _function;
+	}
+
+	template<typename Out, typename ...In>
+	inline Out function<Out, In...>::invoke(In ...args) const
+	{
+		return _function(args...);
 	}
 
 	template<typename Out, typename ...In>
