@@ -51,6 +51,18 @@ namespace momo
 
 		template<typename U>
 		friend complex<U> conjugate(const complex<U>& c);
+
+		template<typename U>
+		friend complex<U> operator+(U d, const complex<U>& c);
+
+		template<typename U>
+		friend complex<U> operator-(U d, const complex<U>& c);
+
+		template<typename U>
+		friend complex<U> operator*(U d, const complex<U>& c);
+
+		template<typename U>
+		friend complex<U> operator/(U d, const complex<U>& c);
 	};
 	
 	template<typename T>
@@ -241,5 +253,29 @@ namespace momo
 	complex<U> conjugate(const complex<U>& c)
 	{
 		return complex<U>(c.Re, -c.Im);
+	}
+
+	template<typename U>
+	complex<U> operator+(U d, const complex<U>& c)
+	{
+		return complex<U>(d + c.Re, c.Im);
+	}
+
+	template<typename U>
+	complex<U> operator-(U d, const complex<U>& c)
+	{
+		return complex<U>(d - c.Re, c.Im);
+	}
+
+	template<typename U>
+	complex<U> operator*(U d, const complex<U>& c)
+	{
+		return complex<U>(d * c.Re, d * c.Im);
+	}
+
+	template<typename U>
+	complex<U> operator/(U d, const complex<U>& c)
+	{
+		return complex<U>(d) / c;
 	}
 }
