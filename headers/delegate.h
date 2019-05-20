@@ -263,18 +263,18 @@ namespace momo
 	template<typename T, typename Out, typename... In>
 	std::function<Out(In...)> getMethod(T& object, Out (T::*method)(In...))
 	{
-		return [&object, method](In...) { (object.*method)(In...); };
+		return [&object, method](In... args) { (object.*method)(args...); };
 	}
 
 	template<typename T, typename Out, typename... In>
 	std::function<Out(In...)> getMethod(const T& object, Out(T::*method)(In...))
 	{
-		return [&object, method](In...) { (object.*method)(In...); };
+		return [&object, method](In... args) { (object.*method)(args...); };
 	}
 
 	template<typename T, typename Out, typename... In>
 	std::function<Out(In...)> getMethod(T&& object, Out(T::*method)(In...))
 	{
-		return [&object, method](In...) { (object.*method)(In...); };
+		return [&object, method](In... args) { (object.*method)(args...); };
 	}
 }
