@@ -1,6 +1,6 @@
 #pragma once
 
-#include "function.h"
+#include <functional>
 #include <vector>
 #include <initializer_list>
 
@@ -9,11 +9,13 @@ namespace momo
 	template<typename Out, typename... In>
 	class delegate
 	{
-		std::vector<function<Out, In...> > _functions;
+		template<typename T> using function = std::function<T>;
+
+		std::vector<function<Out(In...)> > _functions;
 	public:
 		delegate();
-		delegate(const function<Out, In...>& f);
-		delegate(function<Out, In...>&& f);
+		delegate(const function<Out(In...)>& f);
+		delegate(function<Out(In...)>&& f);
 		delegate(const delegate<Out, In...>& other);
 		delegate(delegate<Out, In...>&& other);
 		template<typename Func> delegate(Func f);
@@ -21,8 +23,8 @@ namespace momo
 
 		delegate<Out, In...>& operator=(const delegate<Out, In...>& other);
 		delegate<Out, In...>& operator=(delegate<Out, In...>&& other);
-		delegate<Out, In...>& operator=(const function<Out, In...>& f);
-		delegate<Out, In...>& operator=(function<Out, In...>&& f);
+		delegate<Out, In...>& operator=(const function<Out(In...)>& f);
+		delegate<Out, In...>& operator=(function<Out(In...)>&& f);
 		template<typename Func> delegate<Out, In...>& operator=(Func f);
 		template<typename Func> delegate<Out, In...>& operator=(const std::initializer_list<Func>& list);
 
@@ -31,23 +33,19 @@ namespace momo
 		Out invoke(In... args) const;
 		bool empty() const;
 
+		void clear();
+
 		delegate<Out, In...>& operator+=(const delegate<Out, In...>& other);
 		delegate<Out, In...>& operator+=(delegate<Out, In...>&& other);
-		delegate<Out, In...>& operator+=(const function<Out, In...>& f);
-		delegate<Out, In...>& operator+=(function<Out, In...>&& f);
+		delegate<Out, In...>& operator+=(const function<Out(In...)>& f);
+		delegate<Out, In...>& operator+=(function<Out(In...)>&& f);
 		template<typename Func> delegate<Out, In...>& operator+=(Func f);
 		template<typename Func> delegate<Out, In...>& operator+=(const std::initializer_list<Func>& list);
 
-		delegate<Out, In...>& operator-=(const function<Out, In...>& f);
-		template<typename Func> delegate<Out, In...>& operator-=(Func f);
-
 		delegate<Out, In...> operator+(const delegate<Out, In...>& other) const;
-		delegate<Out, In...> operator+(const function<Out, In...>& f) const;
+		delegate<Out, In...> operator+(const function<Out(In...)>& f) const;
 		template<typename Func> delegate<Out, In...> operator+(Func f) const;
 		template<typename Func> delegate<Out, In...> operator+(const std::initializer_list<Func>& list) const;
-
-		delegate<Out, In...> operator-(const function<Out, In...>& f) const;
-		template<typename Func> delegate<Out, In...> operator-(Func f) const;
 	};
 
 	using event = delegate<void>;
@@ -58,13 +56,13 @@ namespace momo
 	delegate<Out, In...>::delegate() { }
 
 	template<typename Out, typename... In>
-	delegate<Out, In...>::delegate(const function<Out, In...>& f)
+	delegate<Out, In...>::delegate(const function<Out(In...)>& f)
 	{
 		_functions.push_back(f);
 	}
 
 	template<typename Out, typename... In>
-	delegate<Out, In...>::delegate(function<Out, In...>&& f)
+	delegate<Out, In...>::delegate(function<Out(In...)>&& f)
 	{
 		_functions.emplace_back(std::move(f));
 	}
@@ -82,7 +80,7 @@ namespace momo
 	delegate<Out, In...>::delegate(Func f)
 		: _functions()
 	{
-		_functions.emplace_back(std::move(function<Out, In...>(f)));
+		_functions.emplace_back(function<Out(In...)>(f));
 	}
 
 	template<typename Out, typename... In>
@@ -91,7 +89,7 @@ namespace momo
 	{
 		for (auto f : list)
 		{
-			_functions.emplace_back(std::move(function<Out, In...>(f)));
+			_functions.emplace_back(std::move(function<Out(In...)>(f)));
 		}
 	}
 
@@ -110,7 +108,7 @@ namespace momo
 	}
 
 	template<typename Out, typename... In>
-	delegate<Out, In...>& delegate<Out, In...>::operator=(const function<Out, In...>& f)
+	delegate<Out, In...>& delegate<Out, In...>::operator=(const function<Out(In...)>& f)
 	{
 		_functions.clear();
 		_functions.push_back(f);
@@ -118,7 +116,7 @@ namespace momo
 	}
 
 	template<typename Out, typename... In>
-	delegate<Out, In...>& delegate<Out, In...>::operator=(function<Out, In...>&& f)
+	delegate<Out, In...>& delegate<Out, In...>::operator=(function<Out(In...)>&& f)
 	{
 		_functions.clear();
 		_functions.emplace_back(std::move(f));
@@ -130,7 +128,7 @@ namespace momo
 	delegate<Out, In...>& delegate<Out, In...>::operator=(Func f)
 	{
 		_functions.clear();
-		_functions.emplace_back(std::move(function<Out, In...>(f)));
+		_functions.emplace_back(std::move(function<Out(In...)>(f)));
 		return *this;
 	}
 
@@ -141,7 +139,7 @@ namespace momo
 		_functions.clear();
 		for (auto f : list)
 		{
-			_functions.emplace_back(std::move(function<Out, In...>(f)));
+			_functions.emplace_back(std::move(function<Out(In...)>(f)));
 		}
 		return *this;
 	}
@@ -151,9 +149,9 @@ namespace momo
 	{
 		for (int i = 0; i < (int)_functions.size() - 1; i++)
 		{
-			_functions[i].invoke(args...);
+			_functions[i](args...);
 		}
-		return _functions.back().invoke(args...);
+		return _functions.back()(args...);
 	}
 
 	template<typename Out, typename ...In>
@@ -161,15 +159,21 @@ namespace momo
 	{
 		for (int i = 0; i < (int)_functions.size() - 1; i++)
 		{
-			_functions[i].invoke(args...);
+			_functions[i](args...);
 		}
-		return _functions.back().invoke(args...);
+		return _functions.back()(args...);
 	}
 
 	template<typename Out, typename ...In>
 	inline bool delegate<Out, In...>::empty() const
 	{
 		return _functions.empty();
+	}
+
+	template<typename Out, typename ...In>
+	inline void delegate<Out, In...>::clear()
+	{
+		_functions.clear();
 	}
 
 	template<typename Out, typename... In>
@@ -190,14 +194,14 @@ namespace momo
 	}
 
 	template<typename Out, typename... In>
-	delegate<Out, In...>& delegate<Out, In...>::operator+=(const function<Out, In...>& f)
+	delegate<Out, In...>& delegate<Out, In...>::operator+=(const function<Out(In...)>& f)
 	{
 		_functions.push_back(f);
 		return *this;
 	}
 
 	template<typename Out, typename... In>
-	delegate<Out, In...>& delegate<Out, In...>::operator+=(function<Out, In...>&& f)
+	delegate<Out, In...>& delegate<Out, In...>::operator+=(function<Out(In...)>&& f)
 	{
 		_functions.emplace_back(std::move(f));
 		return *this;
@@ -207,7 +211,7 @@ namespace momo
 	template<typename Func>
 	delegate<Out, In...>& delegate<Out, In...>::operator+=(Func f)
 	{
-		_functions.emplace_back(std::move(function<Out, In...>(f)));
+		_functions.emplace_back(std::move(function<Out(In...)>(f)));
 		return *this;
 	}
 
@@ -217,30 +221,7 @@ namespace momo
 	{
 		for (auto f : list)
 		{
-			_functions.emplace_back(std::move(function<Out, In...>(f)));
-		}
-		return *this;
-	}
-
-	template<typename Out, typename... In>
-	delegate<Out, In...>& delegate<Out, In...>::operator-=(const function<Out, In...>& f)
-	{
-		auto it = std::find(_functions.rbegin(), _functions.rend(), f);
-		if (it != _functions.rend())
-		{
-			_functions.erase(std::next(it).base());
-		}
-		return *this;
-	}
-
-	template<typename Out, typename... In>
-	template<typename Func>
-	delegate<Out, In...>& delegate<Out, In...>::operator-=(Func f)
-	{
-		auto it = std::find(_functions.rbegin(), _functions.rend(), function<Out, In...>(f));
-		if (it != _functions.rend())
-		{
-			_functions.erase(std::next(it).base());
+			_functions.emplace_back(std::move(function<Out(In...)>(f)));
 		}
 		return *this;
 	}
@@ -254,7 +235,7 @@ namespace momo
 	}
 
 	template<typename Out, typename... In>
-	delegate<Out, In...> delegate<Out, In...>::operator+(const function<Out, In...>& f) const
+	delegate<Out, In...> delegate<Out, In...>::operator+(const function<Out(In...)>& f) const
 	{
 		delegate<Out, In...> res = *this;
 		res += f;
@@ -279,20 +260,21 @@ namespace momo
 		return res;
 	}
 
-	template<typename Out, typename... In>
-	delegate<Out, In...> delegate<Out, In...>::operator-(const function<Out, In...>& f) const
+	template<typename T, typename Out, typename... In>
+	std::function<Out(In...)> getMethod(T& object, Out (T::*method)(In...))
 	{
-		delegate<Out, In...> res = *this;
-		res -= f;
-		return res;
+		return [&object, method](In...) { (object.*method)(In...); };
 	}
 
-	template<typename Out, typename... In>
-	template<typename Func>
-	delegate<Out, In...> delegate<Out, In...>::operator-(Func f) const
+	template<typename T, typename Out, typename... In>
+	std::function<Out(In...)> getMethod(const T& object, Out(T::*method)(In...))
 	{
-		delegate<Out, In...> res = *this;
-		res -= f;
-		return res;
+		return [&object, method](In...) { (object.*method)(In...); };
+	}
+
+	template<typename T, typename Out, typename... In>
+	std::function<Out(In...)> getMethod(T&& object, Out(T::*method)(In...))
+	{
+		return [&object, method](In...) { (object.*method)(In...); };
 	}
 }
