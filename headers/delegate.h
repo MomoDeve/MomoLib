@@ -48,7 +48,6 @@ namespace momo
 		template<typename Func> delegate<Out, In...> operator+(const std::initializer_list<Func>& list) const;
 	};
 
-	using event = delegate<void>;
 	template<typename... Args> using action = delegate<void, Args...>;
 	template<typename... Args> using predicate = delegate<bool, Args...>;
 
@@ -261,19 +260,19 @@ namespace momo
 	}
 
 	template<typename T, typename Out, typename... In>
-	std::function<Out(In...)> getMethod(T& object, Out (T::*method)(In...))
+	std::function<Out(In...)> makeMethod(T& object, Out (T::*method)(In...))
 	{
 		return [&object, method](In... args) { (object.*method)(args...); };
 	}
 
 	template<typename T, typename Out, typename... In>
-	std::function<Out(In...)> getMethod(const T& object, Out(T::*method)(In...))
+	std::function<Out(In...)> makeMethod(const T& object, Out(T::*method)(In...))
 	{
 		return [&object, method](In... args) { (object.*method)(args...); };
 	}
 
 	template<typename T, typename Out, typename... In>
-	std::function<Out(In...)> getMethod(T&& object, Out(T::*method)(In...))
+	std::function<Out(In...)> makeMethod(T&& object, Out(T::*method)(In...))
 	{
 		return [&object, method](In... args) { (object.*method)(args...); };
 	}
