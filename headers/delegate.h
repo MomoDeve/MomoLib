@@ -260,19 +260,7 @@ namespace momo
 	}
 
 	template<typename T, typename Out, typename... In>
-	std::function<Out(In...)> makeMethod(T& object, Out (T::*method)(In...))
-	{
-		return [&object, method](In... args) { (object.*method)(args...); };
-	}
-
-	template<typename T, typename Out, typename... In>
-	std::function<Out(In...)> makeMethod(const T& object, Out(T::*method)(In...))
-	{
-		return [&object, method](In... args) { (object.*method)(args...); };
-	}
-
-	template<typename T, typename Out, typename... In>
-	std::function<Out(In...)> makeMethod(T&& object, Out(T::*method)(In...))
+	std::function<Out(In...)> make_method(T& object, Out (T::*method)(In...))
 	{
 		return [&object, method](In... args) { (object.*method)(args...); };
 	}
