@@ -43,7 +43,7 @@ namespace momo
 	template<typename Func>
 	event<In...>& event<In...>::operator+=(Func f)
 	{
-		_delegate += f;
+		_delegate += std::move(f);
 		return *this;
 	}
 }

@@ -193,6 +193,13 @@ namespace momo
 	}
 
 	template<typename Out, typename... In>
+	delegate<Out, In...>& delegate<Out, In...>::operator+=(function<Out(In...)>&& f)
+	{
+		_functions.push_back(std::move(f));
+		return *this;
+	}
+
+	template<typename Out, typename... In>
 	delegate<Out, In...>& delegate<Out, In...>::operator+=(const function<Out(In...)>& f)
 	{
 		_functions.push_back(f);
@@ -200,17 +207,10 @@ namespace momo
 	}
 
 	template<typename Out, typename... In>
-	delegate<Out, In...>& delegate<Out, In...>::operator+=(function<Out(In...)>&& f)
-	{
-		_functions.emplace_back(std::move(f));
-		return *this;
-	}
-
-	template<typename Out, typename... In>
 	template<typename Func>
 	delegate<Out, In...>& delegate<Out, In...>::operator+=(Func f)
 	{
-		_functions.emplace_back(std::move(function<Out(In...)>(f)));
+		_functions.emplace_back(f);
 		return *this;
 	}
 
@@ -260,9 +260,21 @@ namespace momo
 	}
 
 	template<typename T, typename Out, typename... In>
+	std::function<Out(In...)> make_method(T&& object, Out(T::*method)(In...) const)
+	{
+		return[object{ std::move(object) }, method](In... args) { (object.*method)(args...); };
+	}
+
+	template<typename T, typename Out, typename... In>
+	std::function<Out(In...)> make_method(T& object, Out(T::*method)(In...) const)
+	{
+		return[&object, method](In... args) { (object.*method)(args...); };
+	}
+
+	template<typename T, typename Out, typename... In>
 	std::function<Out(In...)> make_method(T&& object, Out (T::*method)(In...))
 	{
-		return[object{ std::move(object) }, method](In... args) mutable { (object.*method)(args...); };
+		return [object{ std::move(object) }, method](In... args) mutable { (object.*method)(args...); };
 	}
 
 	template<typename T, typename Out, typename... In>
