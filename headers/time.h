@@ -24,13 +24,13 @@ namespace momo
 
 	std::string getDay();
 
-	template<typename function>
-	int functionTest(function* f, duration time = duration::nano)
+	template<typename function, typename... Args>
+	int functionTest(function& f, duration time = duration::nano, Args... args)
 	{
 		using namespace std::chrono;
 
 		auto start = steady_clock::now();
-		f();
+		f(args...);
 		auto end = steady_clock::now();
 		switch (time)
 		{
