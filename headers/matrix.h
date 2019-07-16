@@ -74,16 +74,23 @@ namespace momo
 	}
 
 	template<typename T>
-	matrix<T> pow(matrix<T> src, size_t pow)
+	matrix<T> pow(matrix<T> M, long long power) 
 	{
-		matrix<T> res(src.vec);
-		while (pow)
+		if (power == 1)
 		{
-			if (pow & 1) res *= src;
-			src *= src;
-			pow >>= 1;
+			return M;
 		}
-		return res;
+		else if (power == 2)
+		{
+			return M * M;
+		}
+
+		if (power % 2 == 1)
+			return pow(M, power - 1) * M;
+		else {
+			auto TMP = pow(M, power / 2);
+			return TMP * TMP;
+		}
 	}
 
 	template<typename T>
