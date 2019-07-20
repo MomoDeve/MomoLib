@@ -5,32 +5,21 @@
 #include <exception>
 #include <initializer_list>
 
-#ifndef size_t
-typedef unsigned int size_t;
-#endif
-
 namespace momo
 {
-	class calculationException : public std::exception
-	{
-		virtual const char* what() const override
-		{
-			return "Exception occured: matrices could not be calculated";
-		}
-	};
-
 	template <typename T>
 	class matrix
 	{
 	private:
 		size_t size_x, size_y;
-		void create(size_t, size_t);
 	public:
 		std::vector<std::vector<T> > vec;
 		matrix();
 		matrix(size_t);
 		matrix(size_t, size_t);
+		matrix(size_t, size_t, T);
 		matrix(const matrix<T>&);
+		matrix(matrix<T>&&);
 		matrix(T**, size_t, size_t);
 		matrix(const std::vector<std::vector<T> >&);
 		matrix(std::initializer_list<std::initializer_list<T> >);
@@ -46,6 +35,7 @@ namespace momo
 		matrix<T>& operator+=(const matrix<T>&);
 		matrix<T>& operator-=(const matrix<T>&);
 		matrix<T>& operator*=(const matrix<T>&);
+		matrix<T>& mult(const matrix<T>&, T mod);
 		matrix<T>& operator+=(T);
 		matrix<T>& operator-=(T);
 		matrix<T>& operator*=(T);
@@ -57,25 +47,13 @@ namespace momo
 		matrix<T> operator-(T) const;
 		matrix<T> operator*(T) const;
 		matrix<T> operator/(T) const;
+
+		template<typename U>
+		friend matrix<U> mult(const matrix<U>&, const matrix<U>&, U mod);
 	};
 
 	template<typename T>
-	std::ostream& operator<< (std::ostream& out, matrix<T>& src)
-	{
-		for (size_t i = 0; i < src.xsize(); i++)
-		{
-			for (size_t j = 0; j < src.ysize(); j++)
-			{
-				out << src.vec[i][j] << " ";
-			}
-			out << "\n";
-		}
-		return out;
-	}
-
-	template<typename T>
-	matrix<T> pow(matrix<T> M, long long power) 
-	{
+	matrix<T> pow(const matrix<T>& M, long long power) {
 		if (power == 1)
 		{
 			return M;
@@ -122,48 +100,33 @@ namespace momo
 	}
 
 	template<typename T>
-	void matrix<T>::create(size_t xsize, size_t ysize)
-	{
-		size_x = xsize;
-		size_y = ysize;
-		vec.resize(size_x);
-		for (size_t i = 0; i < size_x; i++)
-		{
-			vec[i].resize(size_y);
-		}
-	}
-
-	template<typename T>
 	matrix<T>::matrix()
-	{
-		size_x = 0;
-		size_y = 0;
-	}
+		: size_x(0), size_y(0) { }
 
 	template<typename T>
 	matrix<T>::matrix(size_t size)
-	{
-		create(size, size);
-	}
+		: matrix(size, size) { }
 
 	template<typename T>
 	matrix<T>::matrix(size_t xsize, size_t ysize)
-	{
-		create(xsize, ysize);
-	}
+		: matrix(xsize, ysize, T()) { }
+
+	template<typename T>
+	matrix<T>::matrix(size_t xsize, size_t ysize, T fill)
+		: size_x(xsize), size_y(ysize), vec(xsize, std::vector<T>(ysize, fill)) { }
 
 	template<typename T>
 	matrix<T>::matrix(const matrix<T>& src)
-	{
-		size_x = src.size_x;
-		size_y = src.size_y;
-		vec = src.vec;
-	}
+		: size_x(src.size_x), size_y(src.size_y), vec(src.vec) { }
+
+	template<typename T>
+	matrix<T>::matrix(matrix<T>&& M)
+		: size_x(M.size_x), size_y(M.size_y), vec(std::move(M.vec)) { }
 
 	template<typename T>
 	matrix<T>::matrix(T** src, size_t xsize, size_t ysize)
+		: matrix(xsize, ysize)
 	{
-		create(xsize, ysize);
 		for (size_t i = 0; i < size_x; i++)
 		{
 			for (size_t j = 0; j < size_y; j++)
@@ -175,11 +138,7 @@ namespace momo
 
 	template<typename T>
 	matrix<T>::matrix(const std::vector<std::vector<T> >& src)
-	{
-		size_x = src.size();
-		size_y = src[0].size();
-		vec = src;
-	}
+		: size_x(src.size()), size_y(src[0].size()), vec(src) { }
 
 	template<typename T>
 	matrix<T>::matrix(std::initializer_list<std::initializer_list<T> > src)
@@ -251,7 +210,7 @@ namespace momo
 	template<typename T>
 	matrix<T>& matrix<T>::operator+=(const matrix<T>& M)
 	{
-		if (size_x != M.size_x || size_y != M.size_y) throw new calculationException;
+		if (size_x != M.size_x || size_y != M.size_y) return *this;
 		for (size_t i = 0; i < size_x; i++)
 		{
 			for (size_t j = 0; j < size_y; j++)
@@ -265,7 +224,7 @@ namespace momo
 	template<typename T>
 	matrix<T>& matrix<T>::operator-=(const matrix<T>& M)
 	{
-		if (size_x != M.size_x || size_y != M.size_y) throw new calculationException;
+		if (size_x != M.size_x || size_y != M.size_y) return *this;
 		for (size_t i = 0; i < size_x; i++)
 		{
 			for (size_t j = 0; j < size_y; j++)
@@ -305,49 +264,24 @@ namespace momo
 	template<typename T>
 	matrix<T> matrix<T>::operator+(const matrix<T>& M) const
 	{
-		if (size_x != M.size_x || size_y != M.size_y) throw new calculationException;
-		matrix<T> res(size_x, size_y);
-		for (size_t i = 0; i < size_x; i++)
-		{
-			for (size_t j = 0; j < size_y; j++)
-			{
-				res.vec[i][j] = vec[i][j] + M.vec[i][j];
-			}
-		}
+		matrix<T> res = *this;
+		res += M;
 		return res;
 	}
 
 	template<typename T>
 	matrix<T> matrix<T>::operator-(const matrix<T>& M) const
 	{
-		if (size_x != M.size_x || size_y != M.size_y) throw new calculationException;
-		matrix<T> res(size_x, size_y);
-		for (size_t i = 0; i < size_x; i++)
-		{
-			for (size_t j = 0; j < size_y; j++)
-			{
-				res.vec[i][j] = vec[i][j] - M.vec[i][j];
-			}
-		}
+		matrix<T> res = *this;
+		res -= M;
 		return res;
 	}
 
 	template<typename T>
 	matrix<T> matrix<T>::operator*(const matrix<T>& M) const
 	{
-		if (size_y != M.size_x) throw new calculationException();
-		matrix<T> res(size_x, M.size_y);
-		for (size_t i = 0; i < res.xsize(); i++)
-		{
-			for (size_t j = 0; j < res.ysize(); j++)
-			{
-				res.vec[i][j] = 0;
-				for (size_t k = 0; k < size_y; k++)
-				{
-					res.vec[i][j] += vec[i][k] * M.vec[k][j];
-				}
-			}
-		}
+		matrix<T> res = *this;
+		res *= M;
 		return res;
 	}
 
@@ -435,7 +369,7 @@ namespace momo
 	template<typename T>
 	matrix<T>& matrix<T>::operator*=(const matrix<T>& M)
 	{
-		if (size_y != M.size_x) throw new calculationException();
+		if (size_y != M.size_x) return *this;
 		matrix<T> res(size_x, M.size_y);
 		for (size_t i = 0; i < res.xsize(); i++)
 		{
@@ -450,5 +384,49 @@ namespace momo
 		}
 		*this = res;
 		return *this;
+	}
+	template<typename T>
+	matrix<T>& matrix<T>::mult(const matrix<T>& M, T mod)
+	{
+		*this = mult(*this, M, mod);
+		return *this;
+	}
+	template<typename U>
+	matrix<U> mult(const matrix<U>& M1, const matrix<U>& M2, U mod)
+	{
+		if (M1.size_y != M2.size_x) return M1;
+		matrix<U> res(M1.size_x, M2.size_y);
+		for (size_t i = 0; i < res.xsize(); i++)
+		{
+			for (size_t j = 0; j < res.ysize(); j++)
+			{
+				res.vec[i][j] = 0;
+				for (size_t k = 0; k < res.size_y; k++)
+				{
+					res.vec[i][j] += M1.vec[i][k] * M2.vec[k][j] % mod;
+					res.vec[i][j] %= mod;
+				}
+			}
+		}
+		return res;
+	}
+
+	template<typename T>
+	matrix<T> pow(const matrix<T>& M, long long power, T mod) {
+		if (power == 1)
+		{
+			return M;
+		}
+		else if (power == 2)
+		{
+			return mult(M, M, mod);
+		}
+
+		if (power % 2 == 1)
+			return mult(pow(M, power - 1), M, mod);
+		else {
+			auto TMP = pow(M, power / 2);
+			return mult(TMP, TMP, mod);
+		}
 	}
 }
