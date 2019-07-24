@@ -4,6 +4,8 @@
 #include <iostream>
 #include <exception>
 #include <initializer_list>
+#include <set>
+#include <sstream>
 
 namespace momo
 {
@@ -35,7 +37,6 @@ namespace momo
 		matrix<T>& operator+=(const matrix<T>&);
 		matrix<T>& operator-=(const matrix<T>&);
 		matrix<T>& operator*=(const matrix<T>&);
-		matrix<T>& mult(const matrix<T>&, T mod);
 		matrix<T>& operator+=(T);
 		matrix<T>& operator-=(T);
 		matrix<T>& operator*=(T);
@@ -278,11 +279,10 @@ namespace momo
 	}
 
 	template<typename T>
-	matrix<T> matrix<T>::operator*(const matrix<T>& M) const
+	matrix<T>& matrix<T>::operator*=(const matrix<T>& M)
 	{
-		matrix<T> res = *this;
-		res *= M;
-		return res;
+		*this = *this * M;
+		return *this;
 	}
 
 	template<typename T>
@@ -367,41 +367,41 @@ namespace momo
 	}
 
 	template<typename T>
-	matrix<T>& matrix<T>::operator*=(const matrix<T>& M)
+	matrix<T> matrix<T>::operator*(const matrix<T>& M) const
 	{
-		if (size_y != M.size_x) return *this;
-		matrix<T> res(size_x, M.size_y);
+		if (this->size_y != M.size_x)
+		{
+			return matrix<T>(1, 1);
+		}
+		matrix<T> res(this->size_x, M.size_y);
 		for (size_t i = 0; i < res.xsize(); i++)
 		{
 			for (size_t j = 0; j < res.ysize(); j++)
 			{
-				res.vec[i][j] = 0;
-				for (size_t k = 0; k < size_y; k++)
+				res.vec[i][j] = T();
+				for (size_t k = 0; k < this->size_y; k++)
 				{
 					res.vec[i][j] += vec[i][k] * M.vec[k][j];
 				}
 			}
 		}
-		*this = res;
-		return *this;
+		return res;
 	}
-	template<typename T>
-	matrix<T>& matrix<T>::mult(const matrix<T>& M, T mod)
-	{
-		*this = mult(*this, M, mod);
-		return *this;
-	}
+
 	template<typename U>
 	matrix<U> mult(const matrix<U>& M1, const matrix<U>& M2, U mod)
 	{
-		if (M1.size_y != M2.size_x) return M1;
+		if (M1.size_y != M2.size_x)
+		{
+			return matrix<U>(1, 1);
+		}
 		matrix<U> res(M1.size_x, M2.size_y);
 		for (size_t i = 0; i < res.xsize(); i++)
 		{
 			for (size_t j = 0; j < res.ysize(); j++)
 			{
-				res.vec[i][j] = 0;
-				for (size_t k = 0; k < res.size_y; k++)
+				res.vec[i][j] = U();
+				for (size_t k = 0; k < M1.size_y; k++)
 				{
 					res.vec[i][j] += M1.vec[i][k] * M2.vec[k][j] % mod;
 					res.vec[i][j] %= mod;
@@ -423,10 +423,11 @@ namespace momo
 		}
 
 		if (power % 2 == 1)
-			return mult(pow(M, power - 1), M, mod);
-		else {
-			auto TMP = pow(M, power / 2);
-			return mult(TMP, TMP, mod);
+			return mult(M, pow(M, power - 1, mod), mod);
+		else 
+		{
+			auto X = mult(M, M, mod);
+			return pow(X, power / 2, mod);
 		}
 	}
 }
