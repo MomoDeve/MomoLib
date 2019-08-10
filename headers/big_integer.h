@@ -32,6 +32,7 @@ namespace momo
 		int check_inf(const big_integer& other) const;
 	public:
 		static const big_integer inf;
+		bool is_inf() const;
 
 		big_integer();
 		big_integer(long long value);
@@ -85,13 +86,13 @@ namespace momo
 	};
 
 	typedef big_integer big_int;
-	
+
 	#define template_ops(operand) template<typename T> big_integer operator operand(T other, const big_integer& num) \
 								  { return big_integer(other) operand num; }
 	template_ops(+)
 	template_ops(-)
 	template_ops(*)
-	template_ops(/)
+	template_ops(/ )
 	template_ops(%)
 
 	#undef template_ops
