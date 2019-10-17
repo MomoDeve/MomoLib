@@ -1,6 +1,8 @@
 # MomoLib
 A small C++ library for personal usage.
 
+**This library is still in progress and there are probably a lot of bugs in the code, so use it on your risk. I will try to fix them as soon as possible.**
+
 for now there is implementation of:
 - matrices in C++: matrix.h
 - easy get time and function test in C++: time.h
