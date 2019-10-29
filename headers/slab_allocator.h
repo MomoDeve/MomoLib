@@ -216,6 +216,10 @@ namespace momo
 		*/
 		size_t GetObjectSize() const;
 		/*
+		returns total amount of memory occupied by allocator
+		*/
+		uint64_t GetTotalMemory() const;
+		/*
 		returns reference to free slab list
 		*/
 		std::vector<Slab>& GetFreeSlabs();
@@ -377,6 +381,13 @@ namespace momo
 	inline size_t SlabAllocator<ElementT, IndexT>::GetObjectSize() const
 	{
 		return sizeof(ElementT);
+	}
+
+	template<typename ElementT, typename IndexT>
+	inline uint64_t SlabAllocator<ElementT, IndexT>::GetTotalMemory() const
+	{
+		return ((uint64_t)freeSlabs.capacity() + partialSlabs.capacity() + busySlabs.capacity()) *
+				sizeof(Slab) * Slab::maxSize * (sizeof(ElementT) + sizeof(IndexT));
 	}
 
 	template<typename ElementT, typename IndexT>
