@@ -12,3 +12,4 @@ for now there is implementation of:
 - big integers in C++: big_integer.h & big_integer.cpp
 - slab allocator: slab_allocator.h
 - some helpful print and more: utils.h
+- Alexandrescu templates: meta.h
