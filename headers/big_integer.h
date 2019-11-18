@@ -1,12 +1,6 @@
 #pragma once
-
 #include <vector>
-#include <string>
-#include <iostream>
-#include <cmath>
 #include <sstream>
-#include <algorithm>
-#include <exception>
 
 namespace momo
 {
@@ -75,6 +69,7 @@ namespace momo
 
 		std::string to_string(std::string sep = "") const;
 		double to_double() const;
+		size_t size_bytes() const;
 
 		friend std::ostream& operator<<(std::ostream& out, const big_integer& num);
 		friend const big_integer& max(const big_integer& num1, const big_integer& num2);
@@ -88,10 +83,9 @@ namespace momo
 
 	big_integer pow(const big_integer& num, const big_integer& power);
 
-	using BigInteger = big_integer;
-	using big_int = big_integer;
+	typedef big_integer BigInteger;
 
-#define template_ops(operand) template<typename T> big_integer operator operand(T other, const big_integer& num) \
+	#define template_ops(operand) template<typename T> big_integer operator operand(T other, const big_integer& num) \
 								  { return big_integer(other) operand num; }
 	template_ops(+)
 	template_ops(-)
@@ -99,5 +93,5 @@ namespace momo
 	template_ops(/ )
 	template_ops(%)
 
-#undef template_ops
+	#undef template_ops
 }
