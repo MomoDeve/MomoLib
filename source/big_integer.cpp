@@ -1,5 +1,7 @@
 #include "big_integer.h"
 
+#define NOEXCEPT
+
 namespace momo
 {
 	const int32_t big_integer::_base_digits = 9;
@@ -82,9 +84,11 @@ namespace momo
 	{
 		switch (check_inf(other))
 		{
+#ifndef NOEXCEPT
 		case 3:
-			_ASSERTE(false && "inf cannot be compared to inf");
-			return 0;
+			throw new std::exception("inf cannot be compared to inf");
+			break;
+#endif
 		case 2:
 			return -1;
 		case 1:
@@ -128,9 +132,11 @@ namespace momo
 	{
 		switch (check_inf(other))
 		{
+#ifndef NOEXCEPT
 		case 3:
-			_ASSERTE(false && "inf - inf undefined");
+			throw new std::exception("inf - inf undefined");
 			break;
+#endif
 		case 2:
 			_inf = true;
 			_negative = true;
@@ -494,9 +500,13 @@ namespace momo
 		{
 			res._inf = true;
 			res.free();
-			_ASSERTE((!_inf && _digits.size() == 1 && _digits.back() == 0 ||
-				!other._inf && other._digits.size() == 1 && other._digits.back() == 0) &&
-				"0 * inf undefined");
+#ifndef NOEXCEPT
+			if (!_inf && _digits.size() == 1 && _digits.back() == 0 ||
+				!other._inf && other._digits.size() == 1 && other._digits.back() == 0)
+			{
+				throw new std::exception("0 * inf undefined");
+			}
+#endif
 		}
 		else if (compare_abs(other) == -1)
 		{
@@ -526,24 +536,43 @@ namespace momo
 		bool res_sign = other._negative != _negative;
 		switch (check_inf(other))
 		{
+#ifndef NOEXCEPT
 		case 3:
-			_ASSERTE(false && "inf / inf undefined");
+			throw new std::exception("inf / inf undefined");
 			break;
+#endif
 		case 2:
 			return big_integer(0);
 			break;
 		case 1:
-			_ASSERTE(other != 0 && "inf / 0 undefined");
-			big_integer res = big_integer::inf;
-			res._negative = res_sign;
-			return res;
+#ifndef NOEXCEPT
+			if (other == 0)
+			{
+				throw new std::exception("inf / 0 undefined");
+			}
+			else
+#endif
+			{
+				big_integer res = big_integer::inf;
+				res._negative = res_sign;
+				return res;
+			}
+			break;
 		}
 		if (other == 0)
 		{
-			_ASSERTE(*this != 0 && "0 / 0 undefined");
-			big_integer res = big_integer::inf;
-			res._negative = res_sign;
-			return res;
+#ifndef NOEXCEPT
+			if (*this == 0)
+			{
+				throw new std::exception("0 / 0 undefined");
+			}
+			else
+#endif
+			{
+				big_integer res = big_integer::inf;
+				res._negative = res_sign;
+				return res;
+			}
 		}
 		big_integer a = abs(*this), b = abs(other);
 		big_integer res, current;
@@ -583,19 +612,39 @@ namespace momo
 		bool res_sign = other._negative != _negative;
 		switch (check_inf(other))
 		{
+#ifndef NOEXCEPT
 		case 3:
-			_ASSERTE(false && "inf / inf undefined");
-			return *this;
+			throw new std::exception("inf / inf undefined");
+			break;
+#endif
 		case 2:
 			return *this;
+			break;
 		case 1:
-			_ASSERTE(other != 0 && "inf / 0 undefined");
-			return big_integer(0);
+#ifndef NOEXCEPT
+			if (other == 0)
+			{
+				throw new std::exception("inf / 0 undefined");
+			}
+			else
+#endif
+			{
+				return big_integer(0);
+			}
+			break;
 		}
 		if (other == 0)
 		{
-			_ASSERTE(*this != 0 && "0 / 0 undefined");
-			return big_integer(0);
+#ifndef NOEXCEPT
+			if (*this == 0)
+			{
+				throw new std::exception("0 / 0 undefined");
+			}
+			else
+#endif
+			{
+				return big_integer(0);
+			}
 		}
 		big_integer a = abs(*this), b = abs(other);
 		big_integer res, current;
@@ -629,4 +678,5 @@ namespace momo
 		current._negative = res_sign;
 		return current;
 	}
+#undef NOEXCEPT
 }
