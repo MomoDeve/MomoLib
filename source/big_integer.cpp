@@ -1,4 +1,5 @@
-#include "big_integer.h"
+#include "bigInteger.h"
+#include <algorithm>
 
 #define NOEXCEPT
 
@@ -84,11 +85,11 @@ namespace momo
 	{
 		switch (check_inf(other))
 		{
-#ifndef NOEXCEPT
+		#ifndef NOEXCEPT
 		case 3:
 			throw new std::exception("inf cannot be compared to inf");
 			break;
-#endif
+		#endif
 		case 2:
 			return -1;
 		case 1:
@@ -132,11 +133,11 @@ namespace momo
 	{
 		switch (check_inf(other))
 		{
-#ifndef NOEXCEPT
+		#ifndef NOEXCEPT
 		case 3:
 			throw new std::exception("inf - inf undefined");
 			break;
-#endif
+		#endif
 		case 2:
 			_inf = true;
 			_negative = true;
@@ -191,9 +192,7 @@ namespace momo
 	}
 
 	big_integer::big_integer()
-		: _negative(false), _digits(1, 0), _inf(false)
-	{
-	}
+		: _negative(false), _digits(1, 0), _inf(false) { }
 
 	big_integer::big_integer(long long value)
 		: _negative(value < 0), _inf(false)
@@ -229,9 +228,7 @@ namespace momo
 	}
 
 	big_integer::big_integer(const char* value)
-		: big_integer(std::string(value))
-	{
-	}
+		: big_integer(std::string(value)) { }
 
 	big_integer& big_integer::operator=(const std::string& value)
 	{
@@ -292,7 +289,7 @@ namespace momo
 		return *this;
 	}
 
-	big_integer& big_integer::operator%=(const big_integer& other)
+	big_integer & big_integer::operator%=(const big_integer & other)
 	{
 		*this = *this % other;
 		return *this;
@@ -401,6 +398,11 @@ namespace momo
 		return res;
 	}
 
+	size_t big_integer::size_bytes() const
+	{
+		return sizeof(BigInteger) + _digits.capacity() * sizeof(int32_t);
+	}
+
 	std::ostream& operator<<(std::ostream& out, const big_integer& num)
 	{
 		out << num.to_string();
@@ -500,13 +502,13 @@ namespace momo
 		{
 			res._inf = true;
 			res.free();
-#ifndef NOEXCEPT
+			#ifndef NOEXCEPT
 			if (!_inf && _digits.size() == 1 && _digits.back() == 0 ||
 				!other._inf && other._digits.size() == 1 && other._digits.back() == 0)
 			{
 				throw new std::exception("0 * inf undefined");
 			}
-#endif
+			#endif
 		}
 		else if (compare_abs(other) == -1)
 		{
@@ -536,22 +538,22 @@ namespace momo
 		bool res_sign = other._negative != _negative;
 		switch (check_inf(other))
 		{
-#ifndef NOEXCEPT
+		#ifndef NOEXCEPT
 		case 3:
 			throw new std::exception("inf / inf undefined");
 			break;
-#endif
+		#endif
 		case 2:
 			return big_integer(0);
 			break;
 		case 1:
-#ifndef NOEXCEPT
+			#ifndef NOEXCEPT
 			if (other == 0)
 			{
 				throw new std::exception("inf / 0 undefined");
 			}
 			else
-#endif
+			#endif
 			{
 				big_integer res = big_integer::inf;
 				res._negative = res_sign;
@@ -561,13 +563,13 @@ namespace momo
 		}
 		if (other == 0)
 		{
-#ifndef NOEXCEPT
+			#ifndef NOEXCEPT
 			if (*this == 0)
 			{
 				throw new std::exception("0 / 0 undefined");
 			}
 			else
-#endif
+			#endif
 			{
 				big_integer res = big_integer::inf;
 				res._negative = res_sign;
@@ -612,22 +614,22 @@ namespace momo
 		bool res_sign = other._negative != _negative;
 		switch (check_inf(other))
 		{
-#ifndef NOEXCEPT
+		#ifndef NOEXCEPT
 		case 3:
 			throw new std::exception("inf / inf undefined");
 			break;
-#endif
+		#endif
 		case 2:
 			return *this;
 			break;
 		case 1:
-#ifndef NOEXCEPT
+			#ifndef NOEXCEPT
 			if (other == 0)
 			{
 				throw new std::exception("inf / 0 undefined");
 			}
 			else
-#endif
+			#endif
 			{
 				return big_integer(0);
 			}
@@ -635,13 +637,13 @@ namespace momo
 		}
 		if (other == 0)
 		{
-#ifndef NOEXCEPT
+			#ifndef NOEXCEPT
 			if (*this == 0)
 			{
 				throw new std::exception("0 / 0 undefined");
 			}
 			else
-#endif
+			#endif
 			{
 				return big_integer(0);
 			}
@@ -678,5 +680,5 @@ namespace momo
 		current._negative = res_sign;
 		return current;
 	}
-#undef NOEXCEPT
+	#undef NOEXCEPT
 }
