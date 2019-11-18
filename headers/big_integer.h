@@ -6,6 +6,7 @@
 #include <cmath>
 #include <sstream>
 #include <algorithm>
+#include <exception>
 
 namespace momo
 {
@@ -90,7 +91,7 @@ namespace momo
 	using BigInteger = big_integer;
 	using big_int = big_integer;
 
-	#define template_ops(operand) template<typename T> big_integer operator operand(T other, const big_integer& num) \
+#define template_ops(operand) template<typename T> big_integer operator operand(T other, const big_integer& num) \
 								  { return big_integer(other) operand num; }
 	template_ops(+)
 	template_ops(-)
@@ -98,5 +99,5 @@ namespace momo
 	template_ops(/ )
 	template_ops(%)
 
-	#undef template_ops
+#undef template_ops
 }

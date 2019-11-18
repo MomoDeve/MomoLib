@@ -29,9 +29,11 @@ namespace momo
 		return ScopeExitHandler<Lambda>(std::move(lambda));
 	}
 
-	#define MOMO_INNER_CONCAT(value1, value2) value1##value2
-	#define CONCAT(value1, value2) MOMO_INNER_CONCAT(value1, value2)
-	#define ON_SCOPE_EXIT auto CONCAT(momo_ScopeExitHandler, __LINE__) = ScopeExitHandlerHelper() + [&] ()
+#ifndef CONCAT
+#define CONCAT_IMPL(value1, value2) value1##value2
+#define CONCAT(value1, value2) CONCAT_IMPL(value1, value2)
+#endif
+#define ON_SCOPE_EXIT auto CONCAT(momo_ScopeExitHandler, __LINE__) = ScopeExitHandlerHelper() + [&] ()
 
 	template<typename... Others>
 	size_t print() 
