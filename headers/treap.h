@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstdint>
 #include <limits>
+#include <functional>
 
 namespace momo
 {
@@ -72,6 +73,10 @@ namespace momo
 	template <typename T, typename Priority = uint64_t, typename Random = random_int64, template<typename> class Alloc = std::allocator>
 	class treap
 	{
+		#define ON_UPDATE(ROOT) \
+		ROOT->_update();\
+		if(_on_update) _on_update(ROOT)
+
 		template<typename U, typename P = int64_t>
 		struct Node
 		{
@@ -108,6 +113,7 @@ namespace momo
 		using TreapNodePointerPair = typename std::pair<TreapNodePointer, TreapNodePointer>;
 		using TreapPair = typename std::pair<treap, treap>;
 		using Allocator = Alloc<TreapNode>;
+		using UpdateCallback = std::function<void(TreapNodePointer)>;
 
 	private:
 		inline TreapNodePointer _construct_node(const ValueType& value)
@@ -184,7 +190,7 @@ namespace momo
 				{
 					root->left = _insert_node(root->left, node);
 				}
-				root->_update();
+				ON_UPDATE(root);
 				return root;
 			}
 			else
@@ -192,7 +198,7 @@ namespace momo
 				TreapNodePointerPair subTree = _split(root, node->value);
 				node->left = subTree.first;
 				node->right = subTree.second;
-				node->_update();
+				ON_UPDATE(node);
 				return node;
 			}
 		}
@@ -218,14 +224,14 @@ namespace momo
 			{
 				auto subTree = _split(root->left, K);
 				root->left = subTree.second;
-				root->_update();
+				ON_UPDATE(root);
 				return { subTree.first, root };
 			}
 			else
 			{
 				auto subTree = _split(root->right, K);
 				root->right = subTree.first;
-				root->_update();
+				ON_UPDATE(root);
 				return { root, subTree.second };
 			}
 		}
@@ -239,14 +245,14 @@ namespace momo
 			{
 				TreapNodePointer root = tree_left;
 				root->right = _merge(root->right, tree_right);
-				root->_update();
+				ON_UPDATE(root);
 				return root;
 			}
 			else
 			{
 				TreapNodePointer root = tree_right;
 				root->left = _merge(tree_left, root->left);
-				root->_update();
+				ON_UPDATE(root);
 				return root;
 			}
 		}
@@ -258,13 +264,13 @@ namespace momo
 			if (root->value < value)
 			{
 				root->right = _erase(root->right, value);
-				root->_update();
+				ON_UPDATE(root);
 				return root;
 			}
 			else if (value < root->value)
 			{
 				root->left = _erase(root->left, value);
-				root->_update();
+				ON_UPDATE(root);
 				return root;
 			}
 			else // equality
@@ -274,8 +280,10 @@ namespace momo
 
 				_destroy_node(toDelete);
 
-				if(root != nullptr) 
-					root->_update();
+				if (root != nullptr)
+				{
+					ON_UPDATE(root);
+				}
 				return root;
 			}
 		}
@@ -293,7 +301,7 @@ namespace momo
 			{
 				return _find(root->left, value);
 			}
-			else
+			else // value found
 			{
 				return root;
 			}
@@ -318,7 +326,7 @@ namespace momo
 			for (SortedIt it = first; it != last; it++)
 			{
 				TreapNodePointer current = _construct_node(*it);
-				TreapNodePointer lastPopped = nullptr;
+				TreapNodePointer last_popped = nullptr;
 
 				while (!st.empty())
 				{
@@ -327,19 +335,19 @@ namespace momo
 						st.back()->right = current;
 						break;
 					}
-					lastPopped = st.back();
-					lastPopped->_update();
+					last_popped = st.back();
+					ON_UPDATE(last_popped);
 					st.pop_back();
 				}
 				if (st.empty())
 					root = current;
 
-				current->left = lastPopped;
+				current->left = last_popped;
 				st.push_back(current);
 			}
 			while (!st.empty())
 			{
-				st.back()->_update();
+				ON_UPDATE(st.back());
 				st.pop_back();
 			}
 			return root;
@@ -348,10 +356,11 @@ namespace momo
 		TreapNodePointer _root;
 		size_t _size;
 		Allocator _alloc;
+		UpdateCallback _on_update;
 
 	public:
 		inline treap()
-			: _root(nullptr), _size(0)
+			: _root(nullptr), _size(0), _alloc(), _on_update()
 		{
 
 		}
@@ -365,16 +374,16 @@ namespace momo
 		}
 
 		inline treap(treap&& tr) noexcept
-			: _root(tr._root), _size(tr._size)
+			: _root(tr._root), _size(tr._size), _alloc(std::move(tr._alloc)), _on_update(std::move(tr._on_update))
 		{
 			tr._size = 0;
 			tr._root = nullptr;
 		}
 
 		inline treap(const treap& tr)
+			: _root(_deep_copy_recursive(tr._root)), _size(tr._size), _alloc(tr._alloc), _on_update(tr._on_update)
 		{
-			_root = _deep_copy_recursive(tr._root);
-			_size = tr._size;
+			
 		}
 
 		template<typename SortedIt>
@@ -388,6 +397,8 @@ namespace momo
 		{
 			_root = tr._root;
 			_size = tr._size;
+			_alloc = std::move(tr._alloc);
+			_on_update = std::move(tr._on_update);
 			tr._root = nullptr;
 			tr._size = 0;
 			return *this;
@@ -397,6 +408,8 @@ namespace momo
 		{
 			_root = _deep_copy_recursive(tr._root);
 			_size = tr._size;
+			_alloc = tr._alloc;
+			_on_update = tr._on_update;
 		}
 
 		inline Iterator end() const
@@ -494,11 +507,15 @@ namespace momo
 			{
 				p.first._root = sub_trees.first;
 				p.first._size = sub_trees.first->sub_tree_size;
+				p.first._alloc = _alloc;
+				p.first._on_update = _on_update;
 			}
 			if (sub_trees.second != nullptr)
 			{
 				p.second._root = sub_trees.second;
 				p.second._size = sub_trees.second->sub_tree_size;
+				p.second._alloc = _alloc;
+				p.second._on_update = _on_update;
 			}
 
 			_root = nullptr;
@@ -508,12 +525,29 @@ namespace momo
 
 		inline void merge(TreapPair& treaps)
 		{
+			if (_root != nullptr) _destroy_node_recursive(_root);
+
 			TreapNodePointer root = _merge(treaps.first._root, treaps.second._root);
 			_root = root;
 			_size = (root == nullptr) ? 0 : root->sub_tree_size;
+			if (treaps.first._root != nullptr)
+			{
+				_alloc = std::move(treaps.first._alloc);
+				_on_update = std::move(treaps.first._on_update);
+			}
+			else
+			{
+				_alloc = std::move(treaps.second._alloc);
+				_on_update = std::move(treaps.second._on_update);
+			}
 
 			treaps.first._root = treaps.second._root = nullptr;
 			treaps.first._size = treaps.second._size = 0;
+		}
+
+		void on_update(UpdateCallback callback)
+		{
+			_on_update = std::move(callback);
 		}
 
 		friend inline void swap(treap& tr1, treap& tr2);
