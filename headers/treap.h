@@ -151,6 +151,22 @@ namespace momo
 			return node;
 		}
 
+		const TreapNodePointer _most_left(const TreapNodePointer root) const
+		{
+			if (root->left != nullptr)
+				return _most_left(root->left);
+			else
+				return root;
+		}
+
+		const TreapNodePointer _most_right(const TreapNodePointer root) const
+		{
+			if (root->right != nullptr)
+				return _most_right(root->right);
+			else
+				return root;
+		}
+
 		TreapNodePointer _insert_node(TreapNodePointer root, TreapNodePointer node)
 		{
 			if (root == nullptr)
@@ -187,13 +203,10 @@ namespace momo
 			_root = _insert_node(_root, node);
 		}
 
-		TreapNodePointer _insert_val(ValueType&& value)
+		void _insert_val(ValueType&& value)
 		{
 			TreapNodePointer node = _construct_node(std::move(value));
-			TreapNodePointer p = _insert_node(_root, node);
-			if (_root == nullptr)
-				_root = p;
-			return p;
+			_root = _insert_node(_root, node);
 		}
 
 		TreapNodePointerPair _split(TreapNodePointer root, const ValueType& K)
@@ -238,7 +251,7 @@ namespace momo
 			}
 		}
 
-		void _erase(TreapNodePointer root, const ValueType& value)
+		TreapNodePointer _erase(TreapNodePointer root, const ValueType& value)
 		{
 			if (root == nullptr) return nullptr;
 
@@ -261,7 +274,8 @@ namespace momo
 
 				_destroy_node(toDelete);
 
-				root->_update();
+				if(root != nullptr) 
+					root->_update();
 				return root;
 			}
 		}
@@ -283,16 +297,6 @@ namespace momo
 			{
 				return root;
 			}
-		}
-
-		template<typename Func>
-		void _apply(TreapNodePointer root, Func&& func)
-		{
-			if (root == nullptr) return;
-
-			_apply(root->left, std::forward<Func>(func));
-			func(root->value);
-			_apply(root->right, std::forward<Func>(func));
 		}
 
 		template<typename Func>
@@ -430,6 +434,21 @@ namespace momo
 			return _alloc;
 		}
 
+		inline const ValueType& root() const
+		{
+			return _root->value;
+		}
+
+		inline const ValueType& left() const
+		{
+			return _most_left(_root)->value;
+		}
+
+		inline const ValueType& right() const
+		{
+			return _most_right(_root)->value;
+		}
+
 		template<typename SortedIt>
 		inline void rebuild(const SortedIt& first, const SortedIt& last)
 		{
@@ -444,11 +463,10 @@ namespace momo
 			_size = _root->sub_tree_size;
 		}
 
-		inline Iterator insert(ValueType&& value)
+		inline void insert(ValueType&& value)
 		{
-			Iterator it(_insert_val(std::move(value)));
-			_size = _root.sub_tree_size;
-			return it;
+			_insert_val(std::move(value));
+			_size = _root->sub_tree_size;
 		}
 
 		inline Iterator find(const ValueType& value) const
@@ -458,14 +476,8 @@ namespace momo
 
 		inline void erase(const ValueType& value)
 		{
-			_erase(_root, value);
-			_size = _root->sub_tree_size;
-		}
-
-		template<typename Func>
-		inline void apply_visitor(Func&& func)
-		{
-			_apply(_root, std::forward<Func>(func));
+			_root = _erase(_root, value);
+			_size = (_root == nullptr) ? 0 : _root->sub_tree_size;
 		}
 
 		template<typename Func>
@@ -474,9 +486,9 @@ namespace momo
 			_apply(_root, std::forward<Func>(func));
 		}
 
-		inline static TreapPair split(treap& tr, const ValueType& value)
+		inline TreapPair split(const ValueType& value)
 		{
-			TreapNodePointerPair sub_trees = tr._split(tr._root, value);
+			TreapNodePointerPair sub_trees = _split(_root, value);
 			TreapPair p;
 			if (sub_trees.first != nullptr)
 			{
@@ -489,22 +501,19 @@ namespace momo
 				p.second._size = sub_trees.second->sub_tree_size;
 			}
 
-			tr._root = nullptr;
-			tr._size = 0;
+			_root = nullptr;
+			_size = 0;
 			return p; // NRVO
 		}
 
-		inline static treap merge(treap& left, treap& right)
+		inline void merge(TreapPair& treaps)
 		{
-			treap tr;
-			TreapNodePointer root = tr._merge(left._root, right._root);
-			tr._root = root;
-			tr._size = root->sub_tree_size;
+			TreapNodePointer root = _merge(treaps.first._root, treaps.second._root);
+			_root = root;
+			_size = (root == nullptr) ? 0 : root->sub_tree_size;
 
-			left._root = right._root = nullptr;
-			left._size = right._size = 0;
-
-			return tr; // NRVO
+			treaps.first._root = treaps.second._root = nullptr;
+			treaps.first._size = treaps.second._size = 0;
 		}
 
 		friend inline void swap(treap& tr1, treap& tr2);
