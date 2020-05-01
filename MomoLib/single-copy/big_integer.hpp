@@ -101,7 +101,7 @@ namespace momo
 #undef template_ops
 }
 
-#define NOEXCEPT
+#define MOMOLIB_NOEXCEPT
 
 namespace momo
 {
@@ -187,12 +187,12 @@ namespace momo
 		{
 
 		case 3:
-#ifndef NOEXCEPT
+			#ifndef MOMOLIB_NOEXCEPT
 			throw new std::exception("inf cannot be compared to inf");
 			break;
-#else
+			#else
 			return 0;
-#endif
+			#endif
 		case 2:
 			return -1;
 		case 1:
@@ -237,12 +237,12 @@ namespace momo
 		switch (check_inf(other))
 		{
 		case 3:
-#ifndef NOEXCEPT
+			#ifndef MOMOLIB_NOEXCEPT
 			throw new std::exception("inf - inf undefined");
 			break;
-#else
+			#else
 			return;
-#endif
+			#endif
 		case 2:
 			_inf = true;
 			_negative = true;
@@ -620,11 +620,11 @@ namespace momo
 			res.free();
 			if (is_zero() || other.is_zero())
 			{
-#ifndef NOEXCEPT
+				#ifndef MOMOLIB_NOEXCEPT
 				throw new std::exception("0 * inf undefined");
-#else
+				#else
 				return 0;
-#endif
+				#endif
 			}
 			res = big_integer::inf;
 			res._negative = _negative != other._negative;
@@ -659,26 +659,26 @@ namespace momo
 		switch (check_inf(other))
 		{
 		case 3:
-#ifndef NOEXCEPT
+			#ifndef MOMOLIB_NOEXCEPT
 			throw new std::exception("inf / inf undefined");
-#else
+			#else
 			{
 				big_integer res = big_integer::inf;
 				res._negative = res_sign;
 				return res;
 			}
-#endif
+			#endif
 		case 2:
 			return big_integer(0);
 			break;
 		case 1:
-#ifndef NOEXCEPT
+			#ifndef MOMOLIB_NOEXCEPT
 			if (other == 0)
 			{
 				throw new std::exception("inf / 0 undefined");
 			}
 			else
-#endif
+			#endif
 			{
 				big_integer res = big_integer::inf;
 				res._negative = res_sign;
@@ -688,13 +688,13 @@ namespace momo
 		}
 		if (other == 0)
 		{
-#ifndef NOEXCEPT
+			#ifndef MOMOLIB_NOEXCEPT
 			if (*this == 0)
 			{
 				throw new std::exception("0 / 0 undefined");
 			}
 			else
-#endif
+			#endif
 			{
 				big_integer res = big_integer::inf;
 				res._negative = res_sign;
@@ -740,23 +740,23 @@ namespace momo
 		switch (check_inf(other))
 		{
 		case 3:
-#ifndef NOEXCEPT
+			#ifndef MOMOLIB_NOEXCEPT
 			throw new std::exception("inf / inf undefined");
 			break;
-#else
+			#else
 			return big_integer::inf;
-#endif
+			#endif
 		case 2:
 			return *this;
 			break;
 		case 1:
 			if (other == 0)
 			{
-#ifndef NOEXCEPT
+				#ifndef MOMOLIB_NOEXCEPT
 				throw new std::exception("inf / 0 undefined");
-#else
+				#else
 				return big_integer::inf;
-#endif
+				#endif
 			}
 			else
 			{
@@ -768,11 +768,11 @@ namespace momo
 		{
 			if (*this == 0)
 			{
-#ifndef NOEXCEPT
+				#ifndef MOMOLIB_NOEXCEPT
 				throw new std::exception("0 / 0 undefined");
-#else
+				#else
 				return big_integer::inf;
-#endif
+				#endif
 			}
 			else
 			{

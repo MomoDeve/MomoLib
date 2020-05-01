@@ -2,6 +2,12 @@
 
 #include <iostream>
 
+/*
+this file contains splay tree implementation.
+I would not recommend to use it in your code, as it was not properly tested
+also, it is not STL compatible at all. Probably, I would rewrite is some day
+*/
+
 template<typename T>
 struct node
 {

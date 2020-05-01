@@ -7,6 +7,10 @@
 #include <set>
 #include <sstream>
 
+/*
+this is simple matrix class. I usually use it when solve 
+programming contests, so you'd better install actual math library, glm for example
+*/
 namespace momo
 {
 	template <typename T>

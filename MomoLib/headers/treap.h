@@ -1,26 +1,43 @@
 #include <vector>
-#include <cstdlib>
 #include <cstdint>
 #include <limits>
 #include <functional>
+#include <random>
 
 namespace momo
 {
+	/*
+	random that returns int64. Is used to generate keys for treap nodes
+	*/
 	struct random_int64
 	{
-		static int64_t get()
+		using RandomReturnType = std::uint_fast64_t;
+
+		using Generator = std::mersenne_twister_engine<RandomReturnType, 64, 312, 156, 31,
+			0xb5026f5aa96619e9, 29,
+			0x5555555555555555, 17,
+			0x71d67fffeda60000, 37,
+			0xfff7eee000000000, 43, 6364136223846793005>;
+
+		static Generator generator;
+
+		static RandomReturnType get()
 		{
-			return (((int64_t)rand()) << 32) | (int64_t)rand();
+			return generator();
 		}
 	};
 
+	/*
+	treap iterator. Only provides compare and dereference functions
+	sadly, treap class is not iterable due to it inner structure, so ++/-- are not supported
+	*/
 	template<typename Treap>
 	class iterator
 	{
-		using PointerType = typename Treap::TreapNodePointer;
-		using ValueType = typename Treap::ValueType;
+		using pointer_type = typename Treap::treap_node_ptr;
+		using value_type = typename Treap::value_type;
 
-		PointerType _ptr;
+		pointer_type _ptr;
 	public:
 		inline explicit iterator() noexcept
 			: _ptr(nullptr)
@@ -28,7 +45,7 @@ namespace momo
 
 		}
 
-		inline explicit iterator(PointerType p) noexcept
+		inline explicit iterator(pointer_type p) noexcept
 			: _ptr(p)
 		{
 
@@ -49,27 +66,31 @@ namespace momo
 			return _ptr != it._ptr;
 		}
 
-		inline ValueType& operator*() noexcept
+		inline value_type& operator*() noexcept
 		{
 			return _ptr->value;
 		}
 
-		inline const ValueType& operator*() const noexcept
+		inline const value_type& operator*() const noexcept
 		{
 			return _ptr->value;
 		}
 
-		inline const ValueType& operator->() const noexcept
+		inline const value_type& operator->() const noexcept
 		{
 			return _ptr->value;
 		}
 
-		inline ValueType& operator->() noexcept
+		inline value_type& operator->() noexcept
 		{
 			return _ptr->value;
 		}
 	};
 
+	/*
+	treap class. Tried by best to make it more STL-compatible. 
+	Tested on multiple programming contest tasks, so you are free to use it.
+	*/
 	template <typename T, typename Priority = uint64_t, typename Random = random_int64, template<typename> class Alloc = std::allocator>
 	class treap
 	{
@@ -106,50 +127,50 @@ namespace momo
 			}
 		};
 	public:
-		using ValueType = T;
-		using TreapNode = Node<ValueType, Priority>;
-		using TreapNodePointer = TreapNode*;
-		using Iterator = iterator<treap>;
-		using TreapNodePointerPair = typename std::pair<TreapNodePointer, TreapNodePointer>;
-		using TreapPair = typename std::pair<treap, treap>;
-		using Allocator = Alloc<TreapNode>;
-		using UpdateCallback = std::function<void(TreapNodePointer)>;
+		using value_type = T;
+		using treap_node = Node<value_type, Priority>;
+		using treap_node_ptr = treap_node*;
+		using iterator = iterator<treap>;
+		using treap_node_ptr_pair = typename std::pair<treap_node_ptr, treap_node_ptr>;
+		using treap_pair = typename std::pair<treap, treap>;
+		using allocator = Alloc<treap_node>;
+		using update_callback = std::function<void(treap_node_ptr)>;
 
 	private:
-		inline TreapNodePointer _construct_node(const ValueType& value)
+		inline treap_node_ptr _construct_node(const value_type& value)
 		{
-			TreapNodePointer node = _alloc.allocate(1);
+			treap_node_ptr node = _alloc.allocate(1);
 			Priority priority = Random::get();
 			_alloc.construct(node, value, priority);
 			return node;
 		}
 
-		inline TreapNodePointer _construct_node(ValueType&& value)
+		inline treap_node_ptr _construct_node(value_type&& value)
 		{
-			TreapNodePointer node = _alloc.allocate(1);
+			treap_node_ptr node = _alloc.allocate(1);
 			Priority priority = Random::get();
 			_alloc.construct(node, std::move(value), priority);
 			return node;
 		}
 
-		inline void _destroy_node(TreapNodePointer node) noexcept
+		inline void _destroy_node(treap_node_ptr node) noexcept
 		{
 			_alloc.destroy(node);
 			_alloc.deallocate(node, 1);
 		}
 
-		void _destroy_node_recursive(TreapNodePointer node) noexcept
+		void _destroy_node_recursive(treap_node_ptr node) noexcept
 		{
 			if (node->left != nullptr) _destroy_node_recursive(node->left);
 			if (node->right != nullptr) _destroy_node_recursive(node->right);
 			_destroy_node(node);
 		}
 
-		TreapNodePointer _deep_copy_recursive(TreapNodePointer from)
+		treap_node_ptr _deep_copy_recursive(treap_node_ptr from)
 		{
 			if (from == nullptr) return nullptr;
-			Allocator alloc;
-			TreapNodePointer node = alloc.allocate(1);
+			allocator alloc;
+			treap_node_ptr node = alloc.allocate(1);
 			alloc.construct(node, from->value, from->priority);
 			node->sub_tree_size = from->sub_tree_size;
 			node->left = _deep_copy_recursive(from->left);
@@ -157,7 +178,7 @@ namespace momo
 			return node;
 		}
 
-		const TreapNodePointer _most_left(const TreapNodePointer root) const
+		const treap_node_ptr _most_left(const treap_node_ptr root) const
 		{
 			if (root->left != nullptr)
 				return _most_left(root->left);
@@ -165,7 +186,7 @@ namespace momo
 				return root;
 		}
 
-		const TreapNodePointer _most_right(const TreapNodePointer root) const
+		const treap_node_ptr _most_right(const treap_node_ptr root) const
 		{
 			if (root->right != nullptr)
 				return _most_right(root->right);
@@ -173,7 +194,7 @@ namespace momo
 				return root;
 		}
 
-		TreapNodePointer _insert_node(TreapNodePointer root, TreapNodePointer node)
+		treap_node_ptr _insert_node(treap_node_ptr root, treap_node_ptr node)
 		{
 			if (root == nullptr)
 			{
@@ -195,7 +216,7 @@ namespace momo
 			}
 			else
 			{
-				TreapNodePointerPair subTree = _split(root, node->value);
+				treap_node_ptr_pair subTree = _split(root, node->value);
 				node->left = subTree.first;
 				node->right = subTree.second;
 				ON_UPDATE(node);
@@ -203,19 +224,19 @@ namespace momo
 			}
 		}
 
-		void _insert_val(const ValueType& value)
+		void _insert_val(const value_type& value)
 		{
-			TreapNodePointer node = _construct_node(value);
+			treap_node_ptr node = _construct_node(value);
 			_root = _insert_node(_root, node);
 		}
 
-		void _insert_val(ValueType&& value)
+		void _insert_val(value_type&& value)
 		{
-			TreapNodePointer node = _construct_node(std::move(value));
+			treap_node_ptr node = _construct_node(std::move(value));
 			_root = _insert_node(_root, node);
 		}
 
-		TreapNodePointerPair _split(TreapNodePointer root, const ValueType& K)
+		treap_node_ptr_pair _split(treap_node_ptr root, const value_type& K)
 		{
 			if (root == nullptr)
 				return { nullptr, nullptr };
@@ -236,28 +257,28 @@ namespace momo
 			}
 		}
 
-		TreapNodePointer _merge(TreapNodePointer tree_left, TreapNodePointer tree_right)
+		treap_node_ptr _merge(treap_node_ptr tree_left, treap_node_ptr tree_right)
 		{
 			if (tree_left == nullptr) return tree_right;
 			if (tree_right == nullptr) return tree_left;
 
 			if (tree_left->priority < tree_right->priority)
 			{
-				TreapNodePointer root = tree_left;
+				treap_node_ptr root = tree_left;
 				root->right = _merge(root->right, tree_right);
 				ON_UPDATE(root);
 				return root;
 			}
 			else
 			{
-				TreapNodePointer root = tree_right;
+				treap_node_ptr root = tree_right;
 				root->left = _merge(tree_left, root->left);
 				ON_UPDATE(root);
 				return root;
 			}
 		}
 
-		TreapNodePointer _erase(TreapNodePointer root, const ValueType& value)
+		treap_node_ptr _erase(treap_node_ptr root, const value_type& value)
 		{
 			if (root == nullptr) return nullptr;
 
@@ -275,7 +296,7 @@ namespace momo
 			}
 			else // equality
 			{
-				TreapNodePointer toDelete = root;
+				treap_node_ptr toDelete = root;
 				root = _merge(root->left, root->right);
 
 				_destroy_node(toDelete);
@@ -288,7 +309,7 @@ namespace momo
 			}
 		}
 
-		TreapNodePointer _find(const TreapNodePointer root, const ValueType& value) const
+		treap_node_ptr _find(const treap_node_ptr root, const value_type& value) const
 		{
 			if (root == nullptr)
 				return nullptr;
@@ -308,7 +329,7 @@ namespace momo
 		}
 
 		template<typename Func>
-		void _apply(const TreapNodePointer root, Func&& func) const
+		void _apply(const treap_node_ptr root, Func&& func) const
 		{
 			if (root == nullptr) return;
 
@@ -318,15 +339,15 @@ namespace momo
 		}
 
 		template<typename SortedIt>
-		TreapNodePointer _build(const SortedIt& first, const SortedIt& last)
+		treap_node_ptr _build(const SortedIt& first, const SortedIt& last)
 		{
-			std::vector<TreapNodePointer> st;
-			TreapNodePointer root = nullptr;
+			std::vector<treap_node_ptr> st;
+			treap_node_ptr root = nullptr;
 
 			for (SortedIt it = first; it != last; it++)
 			{
-				TreapNodePointer current = _construct_node(*it);
-				TreapNodePointer last_popped = nullptr;
+				treap_node_ptr current = _construct_node(*it);
+				treap_node_ptr last_popped = nullptr;
 
 				while (!st.empty())
 				{
@@ -353,10 +374,10 @@ namespace momo
 			return root;
 		}
 
-		TreapNodePointer _root;
+		treap_node_ptr _root;
 		size_t _size;
-		Allocator _alloc;
-		UpdateCallback _on_update;
+		allocator _alloc;
+		update_callback _on_update;
 
 	public:
 		inline treap()
@@ -412,9 +433,9 @@ namespace momo
 			_on_update = tr._on_update;
 		}
 
-		inline Iterator end() const
+		inline iterator end() const
 		{
-			return Iterator(nullptr);
+			return iterator(nullptr);
 		}
 
 		inline size_t size() const noexcept
@@ -442,22 +463,22 @@ namespace momo
 			}
 		}
 
-		inline Allocator& get_allocator()
+		inline allocator& get_allocator()
 		{
 			return _alloc;
 		}
 
-		inline const ValueType& root() const
+		inline const value_type& root() const
 		{
 			return _root->value;
 		}
 
-		inline const ValueType& left() const
+		inline const value_type& left() const
 		{
 			return _most_left(_root)->value;
 		}
 
-		inline const ValueType& right() const
+		inline const value_type& right() const
 		{
 			return _most_right(_root)->value;
 		}
@@ -470,24 +491,24 @@ namespace momo
 			_size = _root->sub_tree_size;
 		}
 
-		inline void insert(const ValueType& value)
+		inline void insert(const value_type& value)
 		{
 			_insert_val(value);
 			_size = _root->sub_tree_size;
 		}
 
-		inline void insert(ValueType&& value)
+		inline void insert(value_type&& value)
 		{
 			_insert_val(std::move(value));
 			_size = _root->sub_tree_size;
 		}
 
-		inline Iterator find(const ValueType& value) const
+		inline iterator find(const value_type& value) const
 		{
-			return Iterator(_find(_root, value));
+			return iterator(_find(_root, value));
 		}
 
-		inline void erase(const ValueType& value)
+		inline void erase(const value_type& value)
 		{
 			_root = _erase(_root, value);
 			_size = (_root == nullptr) ? 0 : _root->sub_tree_size;
@@ -499,10 +520,10 @@ namespace momo
 			_apply(_root, std::forward<Func>(func));
 		}
 
-		inline TreapPair split(const ValueType& value)
+		inline treap_pair split(const value_type& value)
 		{
-			TreapNodePointerPair sub_trees = _split(_root, value);
-			TreapPair p;
+			treap_pair p;
+			treap_node_ptr_pair sub_trees = _split(_root, value);
 			if (sub_trees.first != nullptr)
 			{
 				p.first._root = sub_trees.first;
@@ -527,7 +548,7 @@ namespace momo
 		{
 			if (_root != nullptr) _destroy_node_recursive(_root);
 
-			TreapNodePointer root = _merge(treaps.first._root, treaps.second._root);
+			treap_node_ptr root = _merge(treaps.first._root, treaps.second._root);
 			_root = root;
 			_size = (root == nullptr) ? 0 : root->sub_tree_size;
 			if (treaps.first._root != nullptr)
