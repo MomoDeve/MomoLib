@@ -1,15 +1,19 @@
 # MomoLib
-A small C++ library for personal usage.
+A small C++ library for personal usage. Initially it contained some code snippets that I used in programming contests, but now I also add some useful classes from my other projects. Also, it contains some concepts that I would be glad to see in C++.
 
-**This library is still in progress and there are probably a lot of bugs in the code, so use it on your risk. I will try to fix them as soon as possible.**
+**This library is still in progress. There CAN be bugs in the code. If you find one - create issue/pull request, I  fix them as soon as possible.**
 
 for now there is implementation of:
 - matrices in C++: matrix.h
-- easy get-time/date: time.h & time.cpp
+- easy get-time/date: timeutils.h
 - splay tree in C++: splay_tree.h
-- delegate in C++: delegate.h
-- events in C++: event.h
-- big integers in C++: big_integer.h & big_integer.cpp
+- treap class in C++: treap.h
+- delegate class in C++: delegate.h
+- event class in C++: event.h
+- big integers in C++: big_integer.h & big_integer.cpp or big_integer.hpp
 - slab allocator: slab_allocator.h
-- some helpful print and more: utils.h
-- Alexandrescu templates: meta.h
+- some helpful print functions and more: utils.h
+- Alexandrescu metaprogramming classes: meta.h
+- event dispatcher class: MxEngineLib/EventDispatcher.h
+- linear allocator class: MxEngineLib/LinearAllocator.h
+- Stack allocator class: MxEngineLib/StackAllocator.h
