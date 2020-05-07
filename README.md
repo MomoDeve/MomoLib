@@ -1,7 +1,7 @@
 # MomoLib
 A small C++ library for personal usage. Initially it contained some code snippets that I used in programming contests, but now I also add some useful classes from my other projects. Also, it contains some concepts that I would be glad to see in C++.
 
-**This library is still in progress. There CAN be bugs in the code. If you find one - create issue/pull request, I  fix them as soon as possible.**
+**This library is still in progress. There CAN be bugs in the code. If you find one - create issue/pull request, I  will fix them as soon as possible.**
 
 for now there is implementation of:
 - matrices in C++: matrix.h
@@ -16,4 +16,5 @@ for now there is implementation of:
 - Alexandrescu metaprogramming classes: meta.h
 - event dispatcher class: MxEngineLib/EventDispatcher.h
 - linear allocator class: MxEngineLib/LinearAllocator.h
-- Stack allocator class: MxEngineLib/StackAllocator.h
+- stack allocator class: MxEngineLib/StackAllocator.h
+- pool allocator class: MxEngineLib/PoolAllocator.h

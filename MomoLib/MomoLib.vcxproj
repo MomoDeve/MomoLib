@@ -158,6 +158,7 @@
     <ClInclude Include="headers\MxEngineLib\LinearAllocator.h" />
     <ClInclude Include="headers\matrix.h" />
     <ClInclude Include="headers\meta.h" />
+    <ClInclude Include="headers\MxEngineLib\PoolAllocator.h" />
     <ClInclude Include="headers\slab_allocator.h" />
     <ClInclude Include="headers\splay_tree.h" />
     <ClInclude Include="headers\MxEngineLib\StackAllocator.h" />
