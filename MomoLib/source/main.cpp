@@ -13,10 +13,11 @@
 #include "MxEngineLib/EventDispatcher.h"
 #include "MxEngineLib/LinearAllocator.h"
 #include "MxEngineLib/StackAllocator.h"
+#include "MxEngineLib/PoolAllocator.h"
+#include "MxEngineLib/RandomAllocator.h"
 
 #include <iostream>
 
 int main()
 {
-    return 0;
 }

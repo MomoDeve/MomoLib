@@ -544,7 +544,7 @@ namespace momo
 			return p; // NRVO
 		}
 
-		inline void merge(TreapPair& treaps)
+		inline void merge(treap_pair& treaps)
 		{
 			if (_root != nullptr) _destroy_node_recursive(_root);
 
@@ -566,7 +566,7 @@ namespace momo
 			treaps.first._size = treaps.second._size = 0;
 		}
 
-		void on_update(UpdateCallback callback)
+		void on_update(update_callback callback)
 		{
 			_on_update = std::move(callback);
 		}
