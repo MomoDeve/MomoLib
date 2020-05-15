@@ -3,6 +3,8 @@ A small C++ library for personal usage. Initially it contained some code snippet
 
 **This library is still in progress. There CAN be bugs in the code. If you find one - create issue/pull request, I  will fix them as soon as possible.**
 
+*note:* MXengineLib folder contains up-to-date utility classes from [MxEngine](https://github.com/MomoDeve/MxEngine) library, which is distributes under BSD-3 license.
+
 for now there is implementation of:
 - matrices in C++: matrix.h
 - easy get-time/date: timeutils.h
@@ -15,6 +17,9 @@ for now there is implementation of:
 - some helpful print functions and more: utils.h
 - Alexandrescu metaprogramming classes: meta.h
 - event dispatcher class: MxEngineLib/EventDispatcher.h
+- compile-time string hash: MxEngineLib/EventDispatcher.h
 - linear allocator class: MxEngineLib/LinearAllocator.h
 - stack allocator class: MxEngineLib/StackAllocator.h
 - pool allocator class: MxEngineLib/PoolAllocator.h
+- random allocator class: MxEngineLib/RandomAllocator.h
+- chunk allocator class: MxEngineLib/ChunkAllocator.h
