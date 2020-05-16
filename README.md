@@ -3,7 +3,7 @@ A small C++ library for personal usage. Initially it contained some code snippet
 
 **This library is still in progress. There CAN be bugs in the code. If you find one - create issue/pull request, I  will fix them as soon as possible.**
 
-*note:* MXengineLib folder contains up-to-date utility classes from [MxEngine](https://github.com/MomoDeve/MxEngine) library, which is distributes under BSD-3 license.
+*note:* MXengineLib folder contains up-to-date utility classes from [MxEngine](https://github.com/MomoDeve/MxEngine) library, which is distributed under BSD-3 license.
 
 for now there is implementation of:
 - matrices in C++: matrix.h
@@ -23,3 +23,4 @@ for now there is implementation of:
 - pool allocator class: MxEngineLib/PoolAllocator.h
 - random allocator class: MxEngineLib/RandomAllocator.h
 - chunk allocator class: MxEngineLib/ChunkAllocator.h
+- double-buffer allocator class: MxEngineLib/DoublebufferAllocator.h

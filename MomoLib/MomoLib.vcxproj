@@ -154,6 +154,8 @@
     <ClInclude Include="headers\big_integer.h" />
     <ClInclude Include="headers\delegate.h" />
     <ClInclude Include="headers\event.h" />
+    <ClInclude Include="headers\MxEngineLib\ChunkAllocator.h" />
+    <ClInclude Include="headers\MxEngineLib\DoublebufferAllocator.h" />
     <ClInclude Include="headers\MxEngineLib\EventDispatcher.h" />
     <ClInclude Include="headers\MxEngineLib\LinearAllocator.h" />
     <ClInclude Include="headers\matrix.h" />

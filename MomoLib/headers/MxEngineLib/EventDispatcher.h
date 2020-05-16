@@ -115,6 +115,8 @@ namespace MxEngine
 
 	/*!
 	transforms string literal into hash by appending _id suffix ("str"_id)
+	\param s string to transform
+	\patam size sizeof string
 	*/
 	constexpr StringId operator"" _id(char const* s, size_t size)
 	{
