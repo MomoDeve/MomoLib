@@ -30,17 +30,13 @@
 
 #include <memory>
 #include <functional>
-#include <unordered_set>
-#include <typeindex>
-#include <map>
-#include <algorithm>
+#include <unordered_map>
+#include <vector>
 #include <cstdint>
+#include <algorithm>
 
 namespace MxEngine
 {
-#define MX_ASSERT(x) assert(x)
-#define MAKE_SCOPE_PROFILER(x) // stub, as no profiler available
-
 	/*!
 	hash table for crc32 algorithm
 	*/
@@ -111,13 +107,13 @@ namespace MxEngine
 
 	// This doesn't take into account the null char
 	// computed hash of string literal at compile time
-#define STRING_ID(x) (MxEngine::crc32(x, sizeof(x)))
+	#define MX_STRING_ID(x) std::integral_constant<MxEngine::StringId, MxEngine::crc32(x, sizeof(x))>::value
 
-/*!
-transforms string literal into hash by appending _id suffix ("str"_id)
-\param s string to transform
-\patam size sizeof string
-*/
+	/*!
+	transforms string literal into hash by appending _id suffix ("str"_id)
+	\param s string to transform
+	\patam size sizeof string
+	*/
 	constexpr StringId operator"" _id(char const* s, size_t size)
 	{
 		return crc32(s, size);
@@ -127,21 +123,21 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 	using UniqueRef = std::unique_ptr<T>;
 
 	/*
-	creates base event class and adds GetEventType() pure virtual method. Used for EventDispatcher class
+	creates base event class and adds GetEventType() pure virtual method. Used for EventDispatcherImpl class
 	*/
-#define MAKE_EVENT_BASE(name) struct name { virtual uint32_t GetEventType() const = 0; virtual ~name() = default; }
+	#define MAKE_EVENT_BASE(name) struct name { virtual uint32_t GetEventType() const = 0; virtual ~name() = default; }
 
 	/*
 	inserted into class body of derived classes from base event. Using compile-time hash from class name to generate type id
 	*/
-#define MAKE_EVENT(class_name) \
+	#define MAKE_EVENT(class_name) \
 	template<typename T> friend class MxEngine::EventDispatcherImpl;\
 	public: virtual uint32_t GetEventType() const override { return eventType; } private:\
-	constexpr static uint32_t eventType = STRING_ID(#class_name)
+	constexpr static uint32_t eventType = MX_STRING_ID(#class_name)
 
 	/*!
-	EventDispatcher class is used to handle all events inside MxEngine. Events can either be dispatch for Application (global) or
-	for currently active scene. Note that events are NOT dispatched when developer console is opened and instead sheduled until it close
+	EventDispatcher stores events and notifies listener if any occures
+	to use this class, create event base with MAKE_EVENT_BASE macro, then make alias for EventDispatcherImpl<EventBase> type
 	*/
 	template<typename EventBase>
 	class EventDispatcherImpl
@@ -153,7 +149,7 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 		using EventTypeIndex = uint32_t;
 
 		/*!
-		list of sheduled all events (executed once per frame by Application class)
+		list of sheduled all events
 		*/
 		EventList events;
 		/*!
@@ -162,12 +158,12 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 		std::unordered_map<EventTypeIndex, CallbackList> callbacks;
 		/*!
 		shedules listeners which will be added next frame.
-		This cache exists because sometimes user wants to add new listener inside other listener callback, which may result in crash.
+		This cache exists to prevent crushes when user wants to add new listener inside other listener callback.
 		*/
 		std::unordered_map<EventTypeIndex, CallbackList> toAddCache;
 		/*!
 		shedules listeners which will be removed next frame.
-		This cache exists because sometimes user wants to remove event listener inside other listener callback (or even perform self-removal), which may result in crash.
+		This cache exists to prevent crushes when user wants to remove event listener inside other listener callback (or even perform self-removal).
 		*/
 		std::vector<std::string> toRemoveCache;
 
@@ -212,6 +208,11 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 			callbacks.erase(it, callbacks.end());
 		}
 
+		/*!
+		wraps event listener into callback with base event as argument. Actual type is retrieved inside callback
+		\param name name of listener to add
+		\param func listener callback function
+		*/
 		template<typename EventType>
 		void AddEventListenerImpl(const std::string& name, std::function<void(EventType&)> func)
 		{
@@ -248,7 +249,7 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 		}
 
 		/*!
-		adds new event listener to dispatcher (listener placed in waiting queue until next frame).
+		adds new event listener to dispatcher (listener is placed in waiting queue until Invoke/InvokeAll call).
 		Note that multiple listeners may have same name. If so, deleting by name will result in removing all of them
 		\param name name of listener (used for deleting listener)
 		\param func listener callback functor
@@ -260,7 +261,7 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 		}
 
 		/*!
-		adds new event listener to dispatcher (listener is placed in waiting queue until next frame).
+		adds new event listener to dispatcher (listener is placed in waiting queue until Invoke/InvokeAll call).
 		Note that multiple listeners may have same name. If so, deleting by name will result in removing all of them
 		\param name name of listener (used for deleting listener)
 		\param func listener callback functor
@@ -272,7 +273,7 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 		}
 
 		/*!
-		removes all event listeners by their names (action is placed in waiting queue until next frame)
+		removes all event listeners by their names (dont do anything until Invoke/InvokeAll is called)
 		\param name name of listeners to be deleted
 		*/
 		void RemoveEventListener(const std::string& name)
@@ -286,7 +287,7 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 		}
 
 		/*!
-		Immediately invokes event of specific type. Note that invokation also forces queues to be invalidated
+		Immediately invokes event of specific type
 		\param event event to dispatch
 		*/
 		template<typename Event>
@@ -297,7 +298,7 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 		}
 
 		/*!
-		Adds event to event queue. All such events will be dispatched in next frames in the order they were added
+		Adds event to event queue
 		\param event event to shedule dispatch
 		*/
 		void AddEvent(UniqueRef<EventBase> event)
@@ -306,7 +307,7 @@ transforms string literal into hash by appending _id suffix ("str"_id)
 		}
 
 		/*!
-		Invokes all shedules events in the order they were added. Note that invoke also forces queues to be invalidated
+		Invokes all shedules events in the order they were added
 		*/
 		void InvokeAll()
 		{
