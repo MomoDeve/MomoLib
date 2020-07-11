@@ -38,8 +38,8 @@
 
 namespace MxEngine
 {
-	#define MX_ASSERT(x) assert(x)
-	#define MAKE_SCOPE_PROFILER(x) // stub, as no profiler available
+#define MX_ASSERT(x) assert(x)
+#define MAKE_SCOPE_PROFILER(x) // stub, as no profiler available
 
 	/*!
 	hash table for crc32 algorithm
@@ -111,13 +111,13 @@ namespace MxEngine
 
 	// This doesn't take into account the null char
 	// computed hash of string literal at compile time
-	#define STRING_ID(x) (crc32(x, sizeof(x)))
+#define STRING_ID(x) (MxEngine::crc32(x, sizeof(x)))
 
-	/*!
-	transforms string literal into hash by appending _id suffix ("str"_id)
-	\param s string to transform
-	\patam size sizeof string
-	*/
+/*!
+transforms string literal into hash by appending _id suffix ("str"_id)
+\param s string to transform
+\patam size sizeof string
+*/
 	constexpr StringId operator"" _id(char const* s, size_t size)
 	{
 		return crc32(s, size);
@@ -129,14 +129,14 @@ namespace MxEngine
 	/*
 	creates base event class and adds GetEventType() pure virtual method. Used for EventDispatcher class
 	*/
-	#define MAKE_EVENT_BASE(name) struct name { inline virtual uint32_t GetEventType() const = 0; virtual ~name() = default; }
+#define MAKE_EVENT_BASE(name) struct name { virtual uint32_t GetEventType() const = 0; virtual ~name() = default; }
 
 	/*
 	inserted into class body of derived classes from base event. Using compile-time hash from class name to generate type id
 	*/
-	#define MAKE_EVENT(class_name) \
-	template<typename T> friend class EventDispatcher;\
-	public: inline virtual uint32_t GetEventType() const override { return eventType; } private:\
+#define MAKE_EVENT(class_name) \
+	template<typename T> friend class MxEngine::EventDispatcherImpl;\
+	public: virtual uint32_t GetEventType() const override { return eventType; } private:\
 	constexpr static uint32_t eventType = STRING_ID(#class_name)
 
 	/*!
@@ -144,7 +144,7 @@ namespace MxEngine
 	for currently active scene. Note that events are NOT dispatched when developer console is opened and instead sheduled until it close
 	*/
 	template<typename EventBase>
-	class EventDispatcher
+	class EventDispatcherImpl
 	{
 		using CallbackBaseFunction = std::function<void(EventBase&)>;
 		using NamedCallback = std::pair<std::string, CallbackBaseFunction>;
@@ -172,15 +172,18 @@ namespace MxEngine
 		std::vector<std::string> toRemoveCache;
 
 		/*!
-		immediately invokes all listeners of event, if any exists
-		\param event event to dispatch
-		*/
-		inline void ProcessEvent(EventBase& event)
+        immediately invokes all listeners of event, if any exists
+        \param event event to dispatch
+        */
+		void ProcessEvent(EventBase& event)
 		{
 			auto& eventCallbacks = this->callbacks[event.GetEventType()];
 			for (const auto& [name, callback] : eventCallbacks)
 			{
-				callback(event);
+				if (std::find(this->toRemoveCache.begin(), this->toRemoveCache.end(), name) == this->toRemoveCache.end())
+				{
+					callback(event);
+				}
 			}
 		}
 
@@ -206,13 +209,23 @@ namespace MxEngine
 				{
 					return p.first == name;
 				});
-			callbacks.resize(it - callbacks.begin());
+			callbacks.erase(it, callbacks.end());
 		}
 
+		template<typename EventType>
+		void AddEventListenerImpl(const std::string& name, std::function<void(EventType&)> func)
+		{
+			this->template AddCallbackImpl<EventType>(name, [func = std::move(func)](EventBase& e)
+			{
+				if (e.GetEventType() == EventType::eventType)
+					func(static_cast<EventType&>(e));
+			});
+		}
+	public:
 		/*!
 		performs cache update, removing events from toRemoveCache list and adding events from toAddCache list
 		*/
-		inline void RemoveQueuedEvents()
+		inline void FlushEvents()
 		{
 			for (auto it = this->toRemoveCache.begin(); it != this->toRemoveCache.end(); it++)
 			{
@@ -234,7 +247,6 @@ namespace MxEngine
 			for (auto& list : this->toAddCache) list.second.clear();
 		}
 
-	public:
 		/*!
 		adds new event listener to dispatcher (listener placed in waiting queue until next frame).
 		Note that multiple listeners may have same name. If so, deleting by name will result in removing all of them
@@ -244,11 +256,7 @@ namespace MxEngine
 		template<typename EventType>
 		void AddEventListener(const std::string& name, std::function<void(EventType&)> func)
 		{
-			this->AddCallbackImpl<EventType>(name, [func = std::move(func)](EventBase& e)
-			{
-				if (e.GetEventType() == EventType::eventType)
-					func((EventType&)e);
-			});
+			this->AddEventListenerImpl(name, std::move(func));
 		}
 
 		/*!
@@ -260,7 +268,7 @@ namespace MxEngine
 		template<typename FunctionType>
 		void AddEventListener(const std::string& name, FunctionType&& func)
 		{
-			this->AddEventListener(name, std::function(std::forward<FunctionType>(func)));
+			this->AddEventListenerImpl(name, std::function(std::forward<FunctionType>(func)));
 		}
 
 		/*!
@@ -270,6 +278,11 @@ namespace MxEngine
 		void RemoveEventListener(const std::string& name)
 		{
 			this->toRemoveCache.push_back(name);
+
+			for (auto& [event, callbacks] : this->toAddCache)
+			{
+				RemoveEventByName(callbacks, name);
+			}
 		}
 
 		/*!
@@ -279,12 +292,8 @@ namespace MxEngine
 		template<typename Event>
 		void Invoke(Event& event)
 		{
-			this->RemoveQueuedEvents();
-			auto& eventCallbacks = this->callbacks[event.GetEventType()];
-			for (const auto& [name, callback] : eventCallbacks)
-			{
-				callback(event);
-			}
+			this->FlushEvents();
+			this->ProcessEvent(event);
 		}
 
 		/*!
@@ -297,15 +306,14 @@ namespace MxEngine
 		}
 
 		/*!
-		Invokes all shedules events in the order they were added. Note that invokation also forces queues to be invalidated
+		Invokes all shedules events in the order they were added. Note that invoke also forces queues to be invalidated
 		*/
 		void InvokeAll()
 		{
-			this->RemoveQueuedEvents();
+			this->FlushEvents();
 
 			for (size_t i = 0; i < this->events.size(); i++)
 			{
-				MAKE_SCOPE_PROFILER(typeid(*this->events[i]).name());
 				this->ProcessEvent(*this->events[i]);
 			}
 			this->events.clear();

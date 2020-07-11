@@ -20,13 +20,23 @@
 
 #include <iostream>
 
+MAKE_EVENT_BASE(BaseEvent);
+using EventDispatcher = MxEngine::EventDispatcherImpl<BaseEvent>;
+
+class SomeEvent : public BaseEvent
+{
+public:
+    MAKE_EVENT(SomeEvent);
+};
+
 int main()
 {
-    uint8_t mem1[128], mem2[64];
-    
-    MxEngine::DoublebufferAllocator<MxEngine::StackAllocator> alloc;
-    alloc.Init(mem1, 128, mem2, 64);
-    alloc.Current().RawAlloc(100);
-    alloc.Swap();
-    alloc.Current().RawAlloc(100); // assert is triggered here
+    EventDispatcher dispatcher;
+    dispatcher.AddEventListener("x", [](SomeEvent& e) { std::cout << "SomeEvent x\n"; });
+    dispatcher.AddEventListener("y", [](SomeEvent& e) { std::cout << "SomeEvent y\n"; });
+
+    SomeEvent e;
+    dispatcher.Invoke(e);
+    dispatcher.RemoveEventListener("x");
+    dispatcher.Invoke(e);
 }
